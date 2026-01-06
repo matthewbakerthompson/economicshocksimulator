@@ -7,7 +7,7 @@ import { stressToColor } from "./colors";
 type EdgeLike = { from: NodeId; to: NodeId; weight: number; lag: number };
 
 export type WaveOverlayState = {
-  t: number;
+  tFloat: number;
   seriesByNode: Record<NodeId, number[]>;
   // A continuous phase for smooth motion independent of discrete timeline.
   phase: number;
@@ -197,9 +197,19 @@ export function drawWaveOverlay(args: {
     nodePos.set(node as NodeId, { x: dd.x, y: dd.y });
   }
 
+  const seriesAt = (id: NodeId, at: number): number => {
+    const series = state.seriesByNode[id];
+    const maxIdx = Math.max(0, series.length - 1);
+    const clamped = Math.max(0, Math.min(maxIdx, at));
+    const i0 = Math.floor(clamped);
+    const i1 = Math.min(maxIdx, i0 + 1);
+    const f = clamped - i0;
+    return series[i0] * (1 - f) + series[i1] * f;
+  };
+
   // Draw node halos (ambient field).
   for (const [id, p] of nodePos) {
-    const s = state.seriesByNode[id]?.[state.t] ?? 0;
+    const s = seriesAt(id, state.tFloat);
     const color = stressToColor(s);
     radialGlow(ctx, p, lerp(30, 120, s), color, lerp(0.10, 0.38, s));
   }
@@ -207,9 +217,12 @@ export function drawWaveOverlay(args: {
   // Shock rings from unemployment node while shock is active in timeline.
   const uPos = nodePos.get("consumers_unemployment");
   if (uPos) {
-    const u = state.seriesByNode["consumers_unemployment"]?.[state.t] ?? 0;
+    const u = seriesAt("consumers_unemployment", state.tFloat);
     const anyActive = state.unemploymentWindows.some(
-      (w) => state.t >= w.startStep && state.t < w.startStep + w.durationSteps && w.durationSteps > 0
+      (w) =>
+        state.tFloat >= w.startStep &&
+        state.tFloat < w.startStep + w.durationSteps &&
+        w.durationSteps > 0
     );
     drawShockRings(ctx, uPos, anyActive, Math.max(0.15, u), state.phase, "#ff50a0");
   }
@@ -221,8 +234,8 @@ export function drawWaveOverlay(args: {
     const b = nodePos.get(e.to);
     if (!a || !b) continue;
 
-    const srcT = Math.max(0, state.t - e.lag);
-    const src = state.seriesByNode[e.from]?.[srcT] ?? 0;
+    const srcT = Math.max(0, state.tFloat - e.lag);
+    const src = seriesAt(e.from, srcT);
     const intensity = clamp01(src * e.weight * 3.6);
     if (intensity < 0.01) continue;
 

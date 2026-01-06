@@ -4,7 +4,7 @@ import Sigma from "sigma";
 import { EDGES, NODES } from "../sim/graphSpec";
 import type { NodeId } from "../sim/types";
 import { useAppStore } from "../state/store";
-import { stressToColor } from "../ui/colors";
+import { rgbaFromHex, stressToColor } from "../ui/colors";
 import { drawWaveOverlay } from "../ui/waveOverlay";
 
 type EdgeAttrs = { weight: number; lag: number; from: NodeId; to: NodeId; label: string };
@@ -17,12 +17,31 @@ export function GraphView() {
   const phaseRef = useRef(0);
 
   const t = useAppStore((s) => s.t);
+  const tFloat = useAppStore((s) => s.tFloat);
   const result = useAppStore((s) => s.result);
   const scenario = useAppStore((s) => s.scenario);
   const selectedNodeId = useAppStore((s) => s.selectedNodeId);
   const hoverNodeId = useAppStore((s) => s.hoverNodeId);
   const setSelectedNodeId = useAppStore((s) => s.setSelectedNodeId);
   const setHoverNodeId = useAppStore((s) => s.setHoverNodeId);
+
+  const tFloatRef = useRef(0);
+  const resultRef = useRef<typeof result>(null);
+  const selectedRef = useRef<NodeId | null>(null);
+  const hoverRef = useRef<NodeId | null>(null);
+
+  useEffect(() => {
+    tFloatRef.current = tFloat;
+  }, [tFloat]);
+  useEffect(() => {
+    resultRef.current = result;
+  }, [result]);
+  useEffect(() => {
+    selectedRef.current = selectedNodeId;
+  }, [selectedNodeId]);
+  useEffect(() => {
+    hoverRef.current = hoverNodeId;
+  }, [hoverNodeId]);
 
   const graph = useMemo(() => {
     const g = new Graph();
@@ -83,15 +102,30 @@ export function GraphView() {
     const sigma = sigmaRef.current;
     if (!sigma) return;
 
+    const seriesAt = (id: NodeId, at: number) => {
+      const r = resultRef.current;
+      const series = r?.seriesByNode[id];
+      if (!series) return 0;
+      const maxIdx = Math.max(0, series.length - 1);
+      const clamped = Math.max(0, Math.min(maxIdx, at));
+      const i0 = Math.floor(clamped);
+      const i1 = Math.min(maxIdx, i0 + 1);
+      const f = clamped - i0;
+      return series[i0] * (1 - f) + series[i1] * f;
+    };
+
     sigma.setSetting("nodeReducer", (node, data) => {
       const id = node as NodeId;
-      const s = result?.seriesByNode[id]?.[t] ?? 0;
-      const isSelected = id === selectedNodeId;
-      const isHover = id === hoverNodeId;
+      const s = seriesAt(id, tFloatRef.current);
+      const isSelected = id === selectedRef.current;
+      const isHover = id === hoverRef.current;
 
       const base = { ...data };
-      const size = 8 + s * 16 + (isSelected ? 5 : 0) + (isHover ? 2 : 0);
-      const color = stressToColor(s);
+      // Smaller core + translucent color so the overlay "plasma" reads as the main shape.
+      const size = 6.5 + s * 12 + (isSelected ? 4 : 0) + (isHover ? 2 : 0);
+      const colorHex = stressToColor(s);
+      const alpha = isSelected || isHover ? 0.92 : 0.55 + s * 0.25;
+      const color = rgbaFromHex(colorHex, alpha);
 
       // Show labels only on hover/selection to keep it clean.
       base.label = isSelected || isHover ? (data.label as string) : "";
@@ -109,23 +143,21 @@ export function GraphView() {
       const lag = typeof attrs.lag === "number" ? attrs.lag : 1;
       const w = typeof attrs.weight === "number" ? attrs.weight : 0.2;
 
-      const srcT = Math.max(0, t - lag);
-      const src = result?.seriesByNode[from]?.[srcT] ?? 0;
+      const srcT = Math.max(0, tFloatRef.current - lag);
+      const src = seriesAt(from, srcT);
       const activation = Math.max(0, Math.min(1, src * w * 2.5));
 
       const base = { ...data };
-      const alpha = 0.08 + activation * 0.55;
+      // Keep Sigma edges understated; overlay provides the “main” energy beams.
+      const alpha = 0.03 + activation * 0.18;
       const edgeColor = stressToColor(Math.min(1, src * 0.9));
-      base.color = `rgba(${parseInt(edgeColor.slice(1, 3), 16)}, ${parseInt(edgeColor.slice(3, 5), 16)}, ${parseInt(
-        edgeColor.slice(5, 7),
-        16
-      )}, ${alpha})`;
-      base.size = 0.8 + activation * 2.6;
+      base.color = rgbaFromHex(edgeColor, alpha);
+      base.size = 0.55 + activation * 1.2;
       return base;
     });
 
     sigma.refresh();
-  }, [hoverNodeId, result, selectedNodeId, t]);
+  }, [graph]);
 
   useEffect(() => {
     const canvas = overlayRef.current;
@@ -171,13 +203,15 @@ export function GraphView() {
       phaseRef.current += 0.016; // ~60fps phase increment
 
       if (result) {
+        // Smoothly refresh Sigma styling (node alpha/size) in sync with overlay.
+        sigma.refresh();
         drawWaveOverlay({
           ctx,
           sigma,
           graph,
           edges,
           state: {
-            t,
+            tFloat: tFloatRef.current,
             phase: phaseRef.current,
             seriesByNode: result.seriesByNode,
             unemploymentWindows,
@@ -195,7 +229,7 @@ export function GraphView() {
       if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     };
-  }, [graph, result, scenario.events, t]);
+  }, [graph, result, scenario.events]);
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>

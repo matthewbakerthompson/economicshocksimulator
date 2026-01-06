@@ -10,6 +10,7 @@ type AppState = {
   isPlaying: boolean;
   playIntervalMs: number;
   t: number;
+  tFloat: number;
   selectedNodeId: NodeId | null;
   hoverNodeId: NodeId | null;
   result: SimulationResult | null;
@@ -17,6 +18,7 @@ type AppState = {
   setScenario: (patch: Partial<Scenario>) => void;
   setSteps: (steps: number) => void;
   setT: (t: number | ((prev: number) => number)) => void;
+  setPlayhead: (tFloat: number) => void;
   setIsPlaying: (isPlaying: boolean) => void;
   setPlayIntervalMs: (ms: number) => void;
   setSelectedNodeId: (id: NodeId | null) => void;
@@ -33,6 +35,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isPlaying: false,
   playIntervalMs: 1100,
   t: 0,
+  tFloat: 0,
   selectedNodeId: "consumers_unemployment",
   hoverNodeId: null,
   result: null,
@@ -40,8 +43,21 @@ export const useAppStore = create<AppState>((set, get) => ({
   setScenario: (patch) => set({ scenario: { ...get().scenario, ...patch } }),
   setSteps: (steps) => set({ steps }),
   setT: (t) => {
-    if (typeof t === "function") set((s) => ({ t: t(s.t) }));
-    else set({ t });
+    if (typeof t === "function") {
+      set((s) => {
+        const nextT = t(s.t);
+        return { t: nextT, tFloat: nextT };
+      });
+    } else {
+      set({ t, tFloat: t });
+    }
+  },
+  setPlayhead: (tFloat) => {
+    const r = get().result;
+    const maxT = Math.max(0, (r?.steps ?? get().steps) - 1);
+    const clamped = Math.max(0, Math.min(maxT, tFloat));
+    const t = Math.floor(clamped + 1e-6);
+    set({ tFloat: clamped, t });
   },
   setIsPlaying: (isPlaying) => set({ isPlaying }),
   setPlayIntervalMs: (ms) => set({ playIntervalMs: ms }),
@@ -53,7 +69,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ isSimulating: true, isPlaying: false });
     try {
       const result = await simulateInWorker({ scenario, steps });
-      set({ result, t: 0 });
+      set({ result, t: 0, tFloat: 0 });
     } finally {
       set({ isSimulating: false });
     }
@@ -67,6 +83,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       isPlaying: false,
       playIntervalMs: 1100,
       t: 0,
+      tFloat: 0,
       selectedNodeId: "consumers_unemployment",
       hoverNodeId: null,
       result: null,
