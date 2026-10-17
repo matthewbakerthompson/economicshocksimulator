@@ -24,5 +24,7 @@ updates:
     schedule:
       interval: monthly
     groups:
+      # Same rule as npm: a major Action version gets its own PR.
       actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]

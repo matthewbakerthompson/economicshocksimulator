@@ -10,6 +10,10 @@ This product models **directional stress propagation under stated assumptions** 
 
 **[Live demo](https://matthewbakerthompson.github.io/economicshocksimulator/)**: runs entirely in the browser; the simulation runs in a Web Worker.
 
+This is a public experiment. Questions, surprising results and ideas go in
+[Discussions](https://github.com/matthewbakerthompson/economicshocksimulator/discussions);
+what changed and why is in [CHANGELOG.md](CHANGELOG.md).
+
 ![Stagflation with an oil glut and an unemployment shock at month 7. Liquidity is selected, and the explainability panel lists the edges, event and buffers that moved it.](docs/images/simulator.jpg)
 
 ## Quick start (Windows PowerShell)
