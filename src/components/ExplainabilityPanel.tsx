@@ -38,11 +38,13 @@ export function ExplainabilityPanel() {
   const consoleRef = useRef<HTMLDivElement | null>(null);
   const [lockToLive, setLockToLive] = useState(true);
 
-  useEffect(() => {
-    // While playing, stay locked to the current month unless the user scrolls away.
-    if (!isPlaying) return;
-    setLockToLive(true);
-  }, [isPlaying]);
+  // While playing, stay locked to the current month unless the user scrolls away: pressing play
+  // re-locks it. Adjusted during render rather than in an effect, to avoid an extra render pass.
+  const [wasPlaying, setWasPlaying] = useState(isPlaying);
+  if (isPlaying !== wasPlaying) {
+    setWasPlaying(isPlaying);
+    if (isPlaying) setLockToLive(true);
+  }
 
   useEffect(() => {
     const el = consoleRef.current;
