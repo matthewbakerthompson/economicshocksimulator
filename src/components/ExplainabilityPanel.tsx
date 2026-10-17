@@ -160,8 +160,8 @@ export function ExplainabilityPanel() {
       </div>
 
       <div className="muted">
-        Interpretation: receipts are <strong>directional attributions</strong> (shock + incoming channels − buffers/decay),
-        not “true” causal measurement.
+        Interpretation: receipts are <strong>directional attributions</strong> (shock + incoming channels − buffers/decay,
+        plus a clamp when stress hits 0 or 1), not “true” causal measurement.
       </div>
     </div>
   );

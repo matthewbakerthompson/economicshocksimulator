@@ -39,9 +39,11 @@ Each push to `main` also deploys the build to GitHub Pages (`.github/workflows/p
 `src/sim/engine.test.ts` and `src/sim/events.test.ts` cover the simulation core:
 
 - the same scenario always produces the same result, and the scenario isn't mutated
-- stress stays within `[0, 1 − buffer strength]` however hard the scenario pushes, and stronger buffers never leave more stress
-- an injection reaches each node along each edge exactly that edge's lag later (and the long lag preset stretches two-month lags to three)
-- every change in a node's stress is accounted for by its receipts
+- stress stays within `[0, 1]` however hard the scenario pushes, and stronger buffers never leave more stress
+- a small shock rises and then fades back toward zero, and every feedback loop has a gain below 1
+- each edge's weight is its pass-through: a node carries weight × its sources' lagged stress, with no compounding
+- an injection reaches each node along each edge exactly that edge's lag later, and the short and long lag presets make every lag shorter or longer
+- every change in a node's stress is accounted for by its receipts, including a clamp at 0 or 1
 - event windows, unemployment scaling, stagflation's regime modifiers, and the oil glut relief being muted under stagflation
 
 ## Project structure (high level)
@@ -69,11 +71,23 @@ Users can stack events (start/duration/magnitude). Example: **oil glut during st
 - Plus **regime modifiers** (e.g., stagflation increases persistence / transmission)
 - Story output explicitly calls out interactions where defined
 
+### Propagation model
+Each node's stress (0 to 1) is a stock. Every month:
+- active events add stress to the nodes they hit (or remove it, for relief)
+- each edge passes on its weight × the new stress its source took on, `lag` months earlier
+- buffers absorb a share of the stress each node carries: 3.5%, 5% or 7% a month for low, medium and high buffers
+- if the result would leave `[0, 1]`, it is clamped
+
+An edge passes on its source's new stress, not its source's whole level every month, so its weight is its pass-through. With nothing clamped, Income Stress is 0.55 × Unemployment two months earlier (the edge's one-month lag, plus the month the change takes to show). Every feedback loop has a gain below 1: the spectral radius of the weight matrix, with lags collapsed, is about 0.58, or 0.62 with stagflation's edge multiplier. So once the events end, stress fades back toward zero. A test fails if a graph change pushes that bound to 1.
+
+The short and long lag presets scale every lag by 0.75 and 1.25 and round toward the preset, so one-month lags become zero or two months and two-month lags become one or three.
+
 ### Explainability
-Every step produces receipts per node:
+Every step produces receipts per node, and they sum to the node's change in stress:
 - `shock`: direct event effects (and event interaction notes)
 - `edge`: transmission along a channel (with lag + weight)
 - `dampener`: buffers/decay (stability + realism guardrail)
+- `clamp`: whatever the `[0, 1]` bounds cut off, when stacked shocks push a node past them
 
 The UI renders this as a **story console** that scrolls as the sim plays and lets users click any month to jump back.
 
