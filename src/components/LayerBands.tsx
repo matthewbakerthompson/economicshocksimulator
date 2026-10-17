@@ -228,22 +228,20 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
                   const b = peakPoint(focus);
                   const gap = b.s.peakAt - a.s.peakAt;
                   const midY = (a.y + b.y) / 2;
-                  const path = `M${a.x},${a.y + 6} C${a.x},${midY} ${b.x},${midY} ${b.x},${b.y - 8}`;
-                  const up = b.y < a.y;
+                  // Leave the earlier peak and arrive at the later one from the side they face.
+                  const down = b.y >= a.y;
+                  const y0 = down ? a.y + 6 : a.y - 6;
+                  const y1 = down ? b.y - 8 : b.y + 8;
+                  const path = `M${a.x},${y0} C${a.x},${midY} ${b.x},${midY} ${b.x},${y1}`;
+                  const tip = down ? b.y - 7 : b.y + 7;
+                  const back = down ? tip - 7 : tip + 7;
                   return (
                     <>
                       <circle cx={a.x} cy={a.y} r={3.5} className="peakDot context" />
                       <path d={path} />
-                      <path
-                        d={
-                          up
-                            ? `M${b.x - 4},${b.y - 2} L${b.x},${b.y - 9} L${b.x + 4},${b.y - 2}`
-                            : `M${b.x - 4},${b.y - 14} L${b.x},${b.y - 7} L${b.x + 4},${b.y - 14}`
-                        }
-                        className="head"
-                      />
+                      <path d={`M${b.x - 4},${back} L${b.x},${tip} L${b.x + 4},${back}`} className="head" />
                       {gap !== 0 && (
-                        <text x={(a.x + b.x) / 2 + 6} y={midY - 4}>
+                        <text x={Math.max(a.x, b.x) + 8} y={midY + 4}>
                           {gap > 0 ? `${gap} month${gap === 1 ? "" : "s"} later` : `${-gap} month${gap === -1 ? "" : "s"} earlier`}
                         </text>
                       )}
