@@ -44,7 +44,7 @@ export type Scenario = {
 export type ReceiptItem = {
   label: string;
   amount: number;
-  kind: "shock" | "edge" | "dampener";
+  kind: "shock" | "edge" | "dampener" | "clamp";
   meta?: Record<string, string | number | boolean>;
 };
 

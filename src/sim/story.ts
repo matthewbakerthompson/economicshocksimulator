@@ -20,7 +20,7 @@ function fmtDelta(d: number): string {
 
 function topDrivers(receipts: ReceiptItem[], max = 2): string[] {
   const drivers = receipts
-    .filter((r) => r.kind !== "dampener")
+    .filter((r) => r.kind === "shock" || r.kind === "edge")
     .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
     .slice(0, max);
   return drivers.map((d) => `${d.label} (${fmtDelta(d.amount)})`);
