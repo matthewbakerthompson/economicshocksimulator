@@ -68,8 +68,8 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
   const layers = useMemo(() => (result ? summarizeLayers(result) : []), [result]);
   const months = result?.steps ?? 0;
   const last = Math.max(1, months - 1);
-  const narrow = width < 640;
-  const labelW = narrow ? 104 : mode === "explore" ? 200 : 176;
+  const narrow = width < 520;
+  const labelW = narrow ? 112 : mode === "explore" ? (width < 760 ? 168 : 200) : 176;
   const x0 = labelW;
   const x1 = Math.max(x0 + 10, width - 14);
   const x = (m: number) => x0 + (m / last) * (x1 - x0);
@@ -306,6 +306,7 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
                 className={r.id === selected ? "nodeLabelRow selected" : "nodeLabelRow"}
                 style={{ top: r.y + 1, width: labelW - 14 }}
                 aria-pressed={r.id === selected}
+                title={r.label}
                 onClick={() => setSelected(r.id)}
               >
                 <span>{r.label}</span>
