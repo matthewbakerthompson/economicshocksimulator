@@ -3,7 +3,7 @@ import { EDGES, NODES } from "../sim/graphSpec";
 import { fmtDelta, nodeLabel } from "../sim/story";
 import { useAppStore } from "../state/store";
 import { stressColor } from "../ui/colors";
-import { receiptRows } from "../ui/receipts";
+import { VISIBLE, receiptRows } from "../ui/receipts";
 import { Icon } from "./Icon";
 
 const SPARK_W = 312;
@@ -23,7 +23,8 @@ export function Inspector() {
   const value = series[t] ?? 0;
   const prev = t > 0 ? (series[t - 1] ?? 0) : value;
   const delta = value - prev;
-  const rows = result ? receiptRows(result, selected, t) : [];
+  // Rows that would print as ±0.000 say nothing; the net row still shows the exact move.
+  const rows = result ? receiptRows(result, selected, t).filter((r) => Math.abs(r.amount) >= VISIBLE) : [];
   const scale = Math.max(1e-9, ...rows.map((r) => Math.abs(r.amount)));
   const outgoing = EDGES.filter((e) => e.from === selected);
 

@@ -101,6 +101,12 @@
   text-decoration: none;
 }
 
+button.topLink {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
 .topLink:hover,
 .iconButton:hover {
   color: var(--text);
@@ -601,13 +607,20 @@ input[type="range"] {
   color: var(--text-2);
 }
 
-.legend {
+.stageTools {
   flex: none;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  width: 150px;
-  padding-top: 6px;
+  width: 170px;
+  margin: 0;
 }
 
 .legendRamp {
@@ -616,11 +629,217 @@ input[type="range"] {
 }
 
 .legendTicks {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  height: 12px;
   font-family: var(--font-mono);
   font-size: 10px;
   color: var(--text-3);
+}
+
+.legendTicks span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.legendTicks span:first-child {
+  transform: none;
+}
+
+.legendTicks span:last-child {
+  transform: translateX(-100%);
+}
+
+.stageBody {
+  min-height: 0;
+  overflow: auto;
+}
+
+.stageBody > .network {
+  height: 100%;
+}
+
+/* Story and table views */
+
+.storyScroll,
+.tableScroll {
+  height: 100%;
+  overflow: auto;
+  padding: 8px 32px 16px;
+}
+
+.storyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.storyItem {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.storyItem:hover {
+  background: var(--surface);
+}
+
+.storyList li[aria-current] .storyItem {
+  border-color: #33415c;
+  background: var(--raised);
+}
+
+.storyList li.later {
+  opacity: 0.45;
+}
+
+.storyMonth {
+  padding-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+}
+
+.storyText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.storyHeadline {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 500;
+}
+
+.storyDrivers,
+.storyDetail {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-2);
+}
+
+.storyDetail {
+  color: var(--text-3);
+}
+
+.tablePad {
+  padding: 16px 32px;
+}
+
+.stressTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.stressTable caption {
+  padding-bottom: 10px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.stressTable th,
+.stressTable td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-weight: 400;
+}
+
+.stressTable thead th {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.sortButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.sortButton:hover,
+.stressTable th[aria-sort] .sortButton {
+  color: var(--text);
+}
+
+.stressTable .groupRow th {
+  padding-top: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.stressTable tbody th .linkButton {
+  font-weight: 500;
+}
+
+.stressTable tr.selected th,
+.stressTable tr.selected td {
+  background: var(--raised);
+}
+
+.rowLayer {
+  display: block;
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.stressCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stressBar {
+  position: relative;
+  width: 120px;
+  height: 6px;
+  border-radius: 3px;
+  background: #19212f;
+  overflow: hidden;
+}
+
+.stressBar span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+}
+
+.stressTable .up {
+  color: #ff8a7a;
+}
+
+.stressTable .down {
+  color: #7fb2ff;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .network {
@@ -1121,8 +1340,18 @@ input[type="range"] {
     flex-direction: column;
   }
 
-  .network {
+  .stageBody > .network {
     height: min(62vw, 460px);
+  }
+
+  .stageBody {
+    overflow: visible;
+  }
+
+  .storyScroll,
+  .tableScroll {
+    height: auto;
+    max-height: 70vh;
   }
 
   .inspector {
@@ -1164,11 +1393,24 @@ input[type="range"] {
     padding: 16px 16px 0;
   }
 
+  .stageTools {
+    align-items: flex-start;
+  }
+
+  .storyScroll,
+  .tableScroll {
+    padding: 8px 16px 16px;
+  }
+
+  .stressBar {
+    width: 60px;
+  }
+
   .headline {
     font-size: 24px;
   }
 
-  .network {
+  .stageBody > .network {
     height: auto;
     padding: 0;
     overflow-x: auto;

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { PRESETS, presetById } from "../sim/presets";
 import type { NodeId, Scenario, SimulationResult } from "../sim/types";
 import { simulateInWorker } from "../sim/workerClient";
+import { type DecodedLink, type ShareState, decodeShareHash } from "./shareLink";
 
 export const HORIZONS = [12, 18, 24] as const;
 export const SPEEDS = [
@@ -9,6 +10,8 @@ export const SPEEDS = [
   { label: "1×", ms: 900 },
   { label: "2×", ms: 450 },
 ] as const;
+
+export type StageView = "network" | "table" | "story";
 
 type AppState = {
   scenario: Scenario;
@@ -22,6 +25,7 @@ type AppState = {
   tFloat: number;
   selectedNodeId: NodeId;
   hoverNodeId: NodeId | null;
+  stageView: StageView;
 
   setScenario: (patch: Partial<Scenario>) => void;
   applyPreset: (id: string) => void;
@@ -32,10 +36,32 @@ type AppState = {
   setPlayIntervalMs: (ms: number) => void;
   setSelectedNodeId: (id: NodeId) => void;
   setHoverNodeId: (id: NodeId | null) => void;
+  setStageView: (view: StageView) => void;
+  applyLink: (link: DecodedLink) => void;
   runSimulation: () => Promise<void>;
 };
 
 const initialPreset = PRESETS[0];
+
+export const DEFAULT_SHARE_STATE: ShareState = {
+  scenario: { events: initialPreset.events, lagPreset: "medium", bufferPreset: "medium" },
+  steps: 24,
+  t: 0,
+  selectedNodeId: "consumers_delinquency",
+};
+
+function readLink(): DecodedLink | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return decodeShareHash(window.location.hash, DEFAULT_SHARE_STATE);
+  } catch {
+    return null;
+  }
+}
+
+/** The scenario the page was opened with, if its URL carried one. */
+export const initialLink = readLink();
+const start: DecodedLink = initialLink ?? { ...DEFAULT_SHARE_STATE, presetId: initialPreset.id, hasMonth: false };
 
 let runToken = 0;
 let runTimer: ReturnType<typeof setTimeout> | undefined;
@@ -50,16 +76,17 @@ export const useAppStore = create<AppState>((set, get) => {
   const maxT = () => Math.max(0, (get().result?.steps ?? get().steps) - 1);
 
   return {
-    scenario: { events: initialPreset.events, lagPreset: "medium", bufferPreset: "medium" },
-    presetId: initialPreset.id,
-    steps: 24,
+    scenario: start.scenario,
+    presetId: start.presetId,
+    steps: start.steps,
     result: null,
     isPlaying: false,
     playIntervalMs: SPEEDS[1].ms,
-    t: 0,
-    tFloat: 0,
-    selectedNodeId: "consumers_delinquency",
+    t: start.t,
+    tFloat: start.t,
+    selectedNodeId: start.selectedNodeId,
     hoverNodeId: null,
+    stageView: "network",
 
     setScenario: (patch) => {
       set({ scenario: { ...get().scenario, ...patch }, ...(patch.events ? { presetId: "custom" } : {}) });
@@ -92,6 +119,19 @@ export const useAppStore = create<AppState>((set, get) => {
     setPlayIntervalMs: (ms) => set({ playIntervalMs: ms }),
     setSelectedNodeId: (id) => set({ selectedNodeId: id }),
     setHoverNodeId: (id) => set({ hoverNodeId: id }),
+    setStageView: (view) => set({ stageView: view }),
+    applyLink: (link) => {
+      set({
+        scenario: link.scenario,
+        presetId: link.presetId,
+        steps: link.steps,
+        selectedNodeId: link.selectedNodeId,
+        t: link.t,
+        tFloat: link.t,
+        isPlaying: false,
+      });
+      queueRun();
+    },
 
     runSimulation: async () => {
       const token = ++runToken;

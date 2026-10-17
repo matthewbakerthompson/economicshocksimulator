@@ -28,6 +28,13 @@ function windowText(ev: CausalEvent): string {
   return end > ev.startStep ? `m${ev.startStep}–${end}` : `m${ev.startStep}`;
 }
 
+function describeWindow(ev: CausalEvent): string {
+  const size =
+    ev.type === "unemployment" ? `${ev.magnitude.toFixed(1)} percentage points` : `severity ${ev.magnitude.toFixed(2)}`;
+  const end = ev.startStep + ev.durationSteps - 1;
+  return `${size}, ${end > ev.startStep ? `months ${ev.startStep} to ${end}` : `month ${ev.startStep}`}`;
+}
+
 function ticks(steps: number): number[] {
   return [0, steps / 4, steps / 2, (3 * steps) / 4].map(Math.round).concat(steps - 1);
 }
@@ -143,6 +150,7 @@ export function ScenarioRail() {
                       type="button"
                       className="eventHead"
                       aria-expanded={open}
+                      aria-label={`${eventName(ev.type)}, ${describeWindow(ev)}`}
                       onClick={() => setSelectedId(open ? null : ev.id)}
                     >
                       <span className="dot" style={{ background: color }} />
@@ -166,6 +174,16 @@ export function ScenarioRail() {
                           </span>
                           <input
                             type="range"
+                            aria-label={
+                              ev.type === "unemployment"
+                                ? `${eventName(ev.type)} magnitude, percentage points`
+                                : `${eventName(ev.type)} severity, 0 to 1`
+                            }
+                            aria-valuetext={
+                              ev.type === "unemployment"
+                                ? `${ev.magnitude.toFixed(1)} percentage points`
+                                : `severity ${ev.magnitude.toFixed(2)}`
+                            }
                             min={0}
                             max={m.max}
                             step={m.step}

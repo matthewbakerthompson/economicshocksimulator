@@ -19,6 +19,15 @@ that sum to the change, and links to the channels that caused it.
 - Presets, segmented controls for lags, buffers and a 12, 18 or 24-month
   horizon, and keyboard control of the timeline.
 - Layouts for tablets and phones.
+- Shareable links: the URL hash holds the scenario, month and selected node, a
+  Copy link button copies it, and bad or old links fall back to the default.
+- A table view of every node's stress, change and peak, and a story view that
+  tells the run month by month in plain language, with no ids or repeats.
+- Stress colors use a square-root scale, so small shocks show downstream; the
+  legend says so.
+- Every input has an accessible name with its units.
+- Receipts name the source node rather than its id, and channels too small to
+  print fold into one row.
 
 ## 0.2.0 (2026-10-17)
 

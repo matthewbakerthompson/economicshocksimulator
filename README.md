@@ -19,9 +19,14 @@ what changed and why is in [CHANGELOG.md](CHANGELOG.md).
 ## Using it
 
 - **Scenario (left):** stack events (unemployment, stagflation, an oil glut), each with a magnitude and a window of months, or start from a preset at the top. Set the lags, the buffers and the horizon. Every change re-runs the model at once.
-- **Network (centre):** the 14 nodes in three layers, colored by stress. Edges carry stress left to right; feedback edges bow back. Moving dashes show the stress a channel is passing on this month. The headline names the month's biggest move and says what the events are doing.
+- **Stage (centre):** the headline names the month's biggest move and says what the events are doing. Three views of the month:
+  - **Network:** the 14 nodes in three layers, colored by stress. Edges carry stress left to right; feedback edges bow back. Moving dashes show the stress a channel is passing on this month.
+  - **Table:** every node's stress, change since last month and peak, grouped by layer or sorted by stress or change. It's the text alternative to the network, and selects nodes too.
+  - **Story:** the whole run, month by month, in plain language: each month's biggest move and what drove it.
+- **Color:** stress uses a square-root scale (the legend says so), so the 0.02–0.1 stress a small shock leaves downstream still shows. Bars in the table stay linear.
 - **Timeline (bottom):** play, step or jump through the months. The heatmap shows every node in every month, so the cascade is visible at a glance; click a cell to jump to that month and node. The keyboard works too: arrows move through months and nodes.
 - **Inspector (right):** the selected node's stress over time and **why it moved** this month: each receipt, as a bar, summing to the change. Click a channel to follow the stress upstream, or a "passes stress to" row to follow it downstream.
+- **Share:** the URL always holds the scenario, month and selected node, and **Copy link** puts it on the clipboard. The hash reads like `#events=u1.5@2-7,s0.65@0-9&lags=medium&buffers=medium&horizon=24&month=12&node=consumers_delinquency`: each event is a type letter (u, s, o), its magnitude, and its first and last month. Anything missing or invalid falls back to the default.
 
 ## Quick start (Windows PowerShell)
 
@@ -47,7 +52,7 @@ Each push to `main` also deploys the build to GitHub Pages (`.github/workflows/p
 
 ## Tests
 
-`src/sim/*.test.ts` cover the simulation core, and `src/ui/ui.test.ts` the helpers the interface relies on:
+`src/sim/*.test.ts` cover the simulation core; `src/ui/ui.test.ts` and `src/state/shareLink.test.ts` cover the helpers the interface relies on:
 
 - the same scenario always produces the same result, and the scenario isn't mutated
 - stress stays within `[0, 1]` however hard the scenario pushes, and stronger buffers never leave more stress
@@ -57,18 +62,20 @@ Each push to `main` also deploys the build to GitHub Pages (`.github/workflows/p
 - every change in a node's stress is accounted for by its receipts, including a clamp at 0 or 1
 - event windows, unemployment scaling, stagflation's regime modifiers, and the oil glut relief being muted under stagflation
 - each month's headline names its biggest move and says which events are active, have ended or are still to come
-- the inspector's receipts sum to each move, every node and edge fits the network's layout, and the stress ramp is clamped
+- the inspector's receipts sum to each move and use names, never ids; channels too small to print fold into one row
+- every node and edge fits the network's layout, and the color scale is a square root, so small stress shows
+- share links round-trip a scenario, recognise presets, and fall back to the defaults on bad input
 
 ## Project structure (high level)
 
-- `src/components/`: the interface: top bar, scenario rail, stage header, network (SVG), timeline and heatmap, inspector
+- `src/components/`: the interface: top bar, scenario rail, stage header, network (SVG), table and story views, timeline and heatmap, inspector
 - `src/sim/`: simulation engine + worker + story generation
   - `engine.ts`: deterministic discrete-time propagation + receipts
   - `events.ts`: causal event stack + interaction rules
   - `presets.ts`: the named scenarios in the top bar
   - `story.ts`: each month's headline and detail line
   - `*.test.ts`: Vitest tests for the engine, events and story
-- `src/state/`: app state (Zustand); every scenario edit re-runs the simulation
+- `src/state/`: app state (Zustand), where every scenario edit re-runs the simulation, and the share-link format (`shareLink.ts`)
 - `src/theme/`: theme tokens and global theme CSS
 - `src/ui/`: stress and event colors, the network layout and edge geometry, and receipt formatting
 - `src/features/`: feature module entrypoints (barrel exports)

@@ -4,7 +4,7 @@ import { presetLag } from "../sim/engine";
 import { EDGES, NODES } from "../sim/graphSpec";
 import type { NodeId, SimulationResult } from "../sim/types";
 import { useAppStore } from "../state/store";
-import { FOCUS_COLOR, RELIEF_COLOR, stressColor } from "../ui/colors";
+import { FOCUS_COLOR, RELIEF_COLOR, stressColor, stressPosition } from "../ui/colors";
 import { LAYER_BANDS, NODE_POSITIONS, NODE_RADIUS, VIEW, edgeGeometry, labelLines } from "../ui/networkLayout";
 
 /** A node's stress at a fractional month, interpolated so playback moves smoothly. */
@@ -81,8 +81,8 @@ export function NetworkView() {
             const lag = presetLag(e.typicalLag, lagPreset);
             const v = stressAt(result, e.from, tFloat - lag);
             const hot = e.from === focus || e.to === focus;
-            const color = hot ? FOCUS_COLOR : stressColor(Math.max(0.25, v));
-            const opacity = hot ? 1 : 0.22 + 0.4 * v;
+            const color = hot ? FOCUS_COLOR : stressColor(Math.max(0.05, v));
+            const opacity = hot ? 1 : 0.2 + 0.45 * stressPosition(v);
             const flow = flows.get(e.id) ?? 0;
             return (
               <g key={e.id}>
@@ -132,7 +132,7 @@ export function NetworkView() {
                 <circle r={24} className="nodeHit" />
                 {isSelected && <circle r={18} className="selectionRing" />}
                 <circle r={NODE_RADIUS + 4} className="focusRing" />
-                <circle r={NODE_RADIUS} fill={stressColor(v)} className={v < 0.12 ? "nodeDot calm" : "nodeDot"} />
+                <circle r={NODE_RADIUS} fill={stressColor(v)} className={v < 0.01 ? "nodeDot calm" : "nodeDot"} />
                 <text className="nodeLabel" y={isSelected ? 31 : 27}>
                   {lines.map((l, i) => (
                     <tspan key={l} x={0} dy={i === 0 ? 0 : 13}>

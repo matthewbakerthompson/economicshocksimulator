@@ -34,8 +34,25 @@ function hex(rgb: Rgb): string {
   return `#${rgb.map((v) => Math.round(v).toString(16).padStart(2, "0")).join("")}`;
 }
 
+/**
+ * Where a stress level sits on the color ramp. A square root spreads out the low end, so
+ * the 0.02–0.1 stress a small shock leaves downstream is visible rather than near-black.
+ * The legend uses the same scale.
+ */
+export function stressPosition(stress01: number): number {
+  return Math.sqrt(clamp01(stress01));
+}
+
+/** Stress levels the legend labels, at their positions on the square-root scale. */
+export const LEGEND_TICKS = [0, 0.05, 0.25, 0.5, 1];
+
 export function stressColor(stress01: number): string {
-  const s = clamp01(stress01);
+  return rampColor(stressPosition(stress01));
+}
+
+/** The ramp itself, from 0 (calm) to 1 (severe), before the square root is applied. */
+export function rampColor(position01: number): string {
+  const s = clamp01(position01);
   for (let i = 1; i < STRESS_STOPS.length; i++) {
     const [b, cb] = STRESS_STOPS[i];
     if (s <= b) {
@@ -47,7 +64,7 @@ export function stressColor(stress01: number): string {
   return hex(STRESS_STOPS[STRESS_STOPS.length - 1][1]);
 }
 
-/** CSS gradient for legends, left to right from 0 to 1. */
+/** CSS gradient for legends, left to right along the ramp (place labels with stressPosition). */
 export function stressGradientCss(): string {
   return `linear-gradient(90deg, ${STRESS_STOPS.map(([p, c]) => `${hex(c)} ${p * 100}%`).join(", ")})`;
 }
