@@ -2,6 +2,7 @@
 
 [![ci](https://github.com/matthewbakerthompson/economicshocksimulator/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/matthewbakerthompson/economicshocksimulator/actions/workflows/ci.yml)
 [![pages](https://github.com/matthewbakerthompson/economicshocksimulator/actions/workflows/pages.yml/badge.svg?branch=main)](https://github.com/matthewbakerthompson/economicshocksimulator/actions/workflows/pages.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 An interactive, **explainable** macro stress propagation simulator with a neon-cosmos aesthetic.
 
@@ -90,4 +91,6 @@ The UI renders this as a **story console** that scrolls as the sim plays and let
 - Real-time market feeds
 - “Black box” outputs without receipts
 
+## License
 
+[MIT](LICENSE)
