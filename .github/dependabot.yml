@@ -5,8 +5,20 @@ updates:
     schedule:
       interval: monthly
     groups:
+      # Minor and patch updates go together; each major gets its own PR, so one breaking
+      # major can't hide behind (or block) the rest.
       npm:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # typescript-eslint pins its TypeScript peer range (8.71 needs <6.1.0), so a TypeScript
+      # major breaks `npm ci`. Drop this once typescript-eslint supports the next major.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      # GraphView uses the sigma 3 API; sigma 4 changed the settings and reducer types.
+      # Drop this when GraphView is ported to sigma 4.
+      - dependency-name: sigma
+        update-types: ["version-update:semver-major"]
   - package-ecosystem: github-actions
     directory: /
     schedule:
