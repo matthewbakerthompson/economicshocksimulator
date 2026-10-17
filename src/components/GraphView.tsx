@@ -16,7 +16,6 @@ export function GraphView() {
   const rafRef = useRef<number | null>(null);
   const phaseRef = useRef(0);
 
-  const t = useAppStore((s) => s.t);
   const tFloat = useAppStore((s) => s.tFloat);
   const result = useAppStore((s) => s.result);
   const scenario = useAppStore((s) => s.scenario);
