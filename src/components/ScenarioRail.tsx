@@ -45,10 +45,12 @@ export function ScenarioRail() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
-  // A preset swaps the events out; keep a sensible one open.
-  useEffect(() => {
-    if (!events.some((e) => e.id === selectedId)) setSelectedId(events[events.length - 1]?.id ?? null);
-  }, [events, selectedId]);
+  // null means every event is collapsed. If the open event is gone (a preset swapped the
+  // events out), open the last one instead.
+  const openId =
+    selectedId === null || events.some((e) => e.id === selectedId)
+      ? selectedId
+      : (events[events.length - 1]?.id ?? null);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -130,7 +132,7 @@ export function ScenarioRail() {
             </div>
             <ul className="eventList">
               {events.map((ev) => {
-                const open = ev.id === selectedId;
+                const open = ev.id === openId;
                 const color = EVENT_COLORS[ev.type];
                 const left = Math.min(ev.startStep, steps) / steps;
                 const width = Math.max(0, Math.min(ev.durationSteps, steps - ev.startStep)) / steps;
