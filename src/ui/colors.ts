@@ -1,30 +1,24 @@
-import type { EventType } from "../sim/types";
-
 type Rgb = [number, number, number];
 
 /**
- * Stress ramp for a dark background: lightness rises with stress (dim slate → violet →
- * magenta → coral → amber), so the order reads without relying on hue.
+ * Stress ramp for a white page: one vermilion ink that darkens as stress rises, starting
+ * from a warm grey that still reads as "calm, but present". Lightness falls steadily, so
+ * the order reads without relying on hue.
  */
 export const STRESS_STOPS: Array<[number, Rgb]> = [
-  [0, [27, 34, 51]],
-  [0.15, [46, 42, 94]],
-  [0.35, [91, 44, 143]],
-  [0.55, [163, 53, 143]],
-  [0.75, [226, 81, 107]],
-  [1, [255, 180, 94]],
+  [0, [236, 235, 232]],
+  [0.3, [236, 183, 167]],
+  [0.6, [214, 104, 80]],
+  [0.82, [184, 52, 30]],
+  [1, [110, 27, 15]],
 ];
 
-export const EVENT_COLORS: Record<EventType, string> = {
-  unemployment: "#6ea8fe",
-  stagflation: "#f5b54a",
-  oil_glut: "#4ade9c",
-};
-
-/** Edges and receipts that touch the node in focus. */
-export const FOCUS_COLOR = "#ff8a7a";
-/** Relief: stress taken away. */
-export const RELIEF_COLOR = "#7fb2ff";
+/** The one signal ink: stress, the story's focus, and the selected node. */
+export const SIGNAL = "#c23b22";
+/** Relief: stress taken away. The only other hue on the page. */
+export const RELIEF = "#3d6e9e";
+/** Context: everything that isn't the focus. Events are named, not colored, so they use it too. */
+export const CONTEXT = "#b9b9b4";
 
 function clamp01(x: number): number {
   return Math.max(0, Math.min(1, x));
@@ -36,8 +30,7 @@ function hex(rgb: Rgb): string {
 
 /**
  * Where a stress level sits on the color ramp. A square root spreads out the low end, so
- * the 0.02–0.1 stress a small shock leaves downstream is visible rather than near-black.
- * The legend uses the same scale.
+ * the 0.02–0.1 stress a small shock leaves downstream is visible rather than blank.
  */
 export function stressPosition(stress01: number): number {
   return Math.sqrt(clamp01(stress01));

@@ -32,7 +32,7 @@ describe("describeMonth", () => {
   it("says which events ended once the stress is moving on its own", () => {
     const r = simulateScenario(stacked, 24);
     const story = describeMonth(r, stacked, 12);
-    expect(story.headline).toBe("Bank losses rise fastest, +0.058");
+    expect(story.headline).toBe("Loan losses rise fastest, +0.058");
     expect(story.activeEvents).toEqual([]);
     expect(story.detail).toBe(
       "The oil glut, unemployment and stagflation ended by month 9. Stress is still moving on its own, through the lags."

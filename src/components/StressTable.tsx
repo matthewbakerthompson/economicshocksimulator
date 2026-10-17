@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NODES } from "../sim/graphSpec";
 import { fmtDelta } from "../sim/story";
 import type { LayerId, NodeId } from "../sim/types";
+import { LAYER_NAMES } from "../sim/narrative";
 import { useAppStore } from "../state/store";
 import { stressColor } from "../ui/colors";
 
@@ -49,7 +50,7 @@ export function StressTable() {
         <button type="button" className="linkButton" aria-pressed={r.id === selected} onClick={() => setSelected(r.id)}>
           {r.label}
         </button>
-        {showLayer && <span className="rowLayer">{r.layer}</span>}
+        {showLayer && <span className="rowLayer">{LAYER_NAMES[r.layer]}</span>}
       </th>
       <td>
         <span className="stressCell">
@@ -79,12 +80,12 @@ export function StressTable() {
     <div className="tableScroll">
       <table className="stressTable">
         <caption>
-          Stress by node at month {t}
-          {t > 0 ? `, with the change since month ${t - 1}` : ""}. Select a node to inspect it.
+          Stress on each part of the economy in month {t}
+          {t > 0 ? `, and the change since month ${t - 1}` : ""}. Select one to see why it moved.
         </caption>
         <thead>
           <tr>
-            {header("layer", "Node")}
+            {header("layer", "Part of the economy")}
             {header("stress", "Stress")}
             {header("change", "Change")}
             <th scope="col">Peak</th>
@@ -98,7 +99,7 @@ export function StressTable() {
               <tbody key={layer}>
                 <tr className="groupRow">
                   <th scope="rowgroup" colSpan={4}>
-                    {layer} <span className="muted">avg {mean.toFixed(2)}</span>
+                    {LAYER_NAMES[layer]} <span className="muted">{mean.toFixed(2)} on average</span>
                   </th>
                 </tr>
                 {group.map((r) => row(r, false))}

@@ -33,7 +33,13 @@ function CopyLinkButton() {
 
   const copy = async () => {
     const s = useAppStore.getState();
-    const hash = encodeShareHash({ scenario: s.scenario, steps: s.steps, t: s.t, selectedNodeId: s.selectedNodeId });
+    const hash = encodeShareHash({
+      mode: s.mode,
+      scenario: s.scenario,
+      steps: s.steps,
+      t: s.t,
+      selectedNodeId: s.selectedNodeId,
+    });
     const url = `${window.location.origin}${window.location.pathname}${hash}`;
     try {
       await navigator.clipboard.writeText(url);
@@ -48,7 +54,7 @@ function CopyLinkButton() {
   return (
     <>
       <button type="button" className="topLink" onClick={() => void copy()}>
-        <Icon name={state === "copied" ? "check" : "link"} />
+        <Icon name={state === "copied" ? "check" : "link"} size={15} />
         <span>{state === "copied" ? "Link copied" : state === "failed" ? "Copy failed" : "Copy link"}</span>
       </button>
       <span className="srOnly" role="status">
@@ -65,30 +71,45 @@ function CopyLinkButton() {
 export function TopBar() {
   const presetId = useAppStore((s) => s.presetId);
   const applyPreset = useAppStore((s) => s.applyPreset);
+  const mode = useAppStore((s) => s.mode);
+  const setMode = useAppStore((s) => s.setMode);
 
   return (
     <header className="topBar">
-      <div className="brand">
-        <h1 className="brandTitle">Economic Shock Simulator</h1>
-        <span className="brandTagline">Directional stress propagation · not a forecast</span>
+      <div className="masthead">
+        <span className="productName">Economic Shock Simulator</span>
+        <div className="modeTabs" role="tablist" aria-label="Mode">
+          {(["story", "explore"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="tab"
+              aria-selected={mode === m}
+              className={mode === m ? "modeTab on" : "modeTab"}
+              onClick={() => setMode(m)}
+            >
+              {m === "story" ? "Story" : "Explore"}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="topActions">
-        <label className="presetSelect">
-          <span className="presetLabel">Preset</span>
-          <select aria-label="Preset scenario" value={presetId} onChange={(e) => applyPreset(e.target.value)}>
-            {presetId === "custom" && <option value="custom">Custom scenario</option>}
+        <label className="scenarioSelect">
+          <span className="scenarioLabel">Scenario</span>
+          <select value={presetId} onChange={(e) => applyPreset(e.target.value)}>
+            {presetId === "custom" && <option value="custom">Your own scenario</option>}
             {PRESETS.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
               </option>
             ))}
           </select>
-          <Icon name="chevron-down" />
+          <Icon name="chevron-down" size={15} />
         </label>
         <CopyLinkButton />
         <a className="topLink" href={`${REPO_URL}#propagation-model`} target="_blank" rel="noreferrer">
-          <Icon name="book-open" />
-          <span>How the model works</span>
+          <Icon name="book-open" size={15} />
+          <span>About the model</span>
         </a>
         <a className="iconButton" href={REPO_URL} target="_blank" rel="noreferrer" aria-label="Source code on GitHub">
           <Icon name="github" size={18} />

@@ -1,32 +1,25 @@
-import { useEffect, useRef } from "react";
-import { Inspector } from "./components/Inspector";
-import { NetworkView } from "./components/NetworkView";
-import { ScenarioRail } from "./components/ScenarioRail";
-import { StageHeader } from "./components/StageHeader";
-import { StoryView } from "./components/StoryView";
-import { StressTable } from "./components/StressTable";
-import { TimelinePanel } from "./components/TimelinePanel";
+import { useEffect } from "react";
+import { ExploreMode } from "./components/ExploreMode";
+import { StoryMode } from "./components/StoryMode";
 import { TopBar } from "./components/TopBar";
+import { usePlayback } from "./hooks/usePlayback";
 import { decodeShareHash, encodeShareHash } from "./state/shareLink";
-import { initialLink, useAppStore } from "./state/store";
+import { useAppStore } from "./state/store";
 
 /** Keeps the URL hash in step with the scenario, and applies a link pasted into the address bar. */
 function useShareableUrl() {
   useEffect(() => {
-    const write = () => {
+    const current = () => {
       const s = useAppStore.getState();
-      const hash = encodeShareHash({ scenario: s.scenario, steps: s.steps, t: s.t, selectedNodeId: s.selectedNodeId });
+      return { mode: s.mode, scenario: s.scenario, steps: s.steps, t: s.t, selectedNodeId: s.selectedNodeId };
+    };
+    const write = () => {
+      const hash = encodeShareHash(current());
       if (hash !== window.location.hash) window.history.replaceState(null, "", hash);
     };
     const onHashChange = () => {
-      const s = useAppStore.getState();
-      const link = decodeShareHash(window.location.hash, {
-        scenario: s.scenario,
-        steps: s.steps,
-        t: s.t,
-        selectedNodeId: s.selectedNodeId,
-      });
-      if (link) s.applyLink(link);
+      const link = decodeShareHash(window.location.hash, current());
+      if (link) useAppStore.getState().applyLink(link);
     };
     write();
     const unsubscribe = useAppStore.subscribe(write);
@@ -39,44 +32,20 @@ function useShareableUrl() {
 }
 
 export function App() {
-  const result = useAppStore((s) => s.result);
-  const view = useAppStore((s) => s.stageView);
-  const started = useRef(false);
+  const mode = useAppStore((s) => s.mode);
+  const presetId = useAppStore((s) => s.presetId);
+  usePlayback();
   useShareableUrl();
 
   useEffect(() => {
     void useAppStore.getState().runSimulation();
   }, []);
 
-  // Play the first run through once, unless the link named a month or the visitor prefers
-  // reduced motion; then open on a month where the cascade is well under way.
-  useEffect(() => {
-    if (!result || started.current) return;
-    started.current = true;
-    if (initialLink?.hasMonth) return;
-    const st = useAppStore.getState();
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) st.setT(Math.min(12, result.steps - 1));
-    else st.setIsPlaying(true);
-  }, [result]);
-
   return (
     <div className="app">
       <TopBar />
-      <div className="workspace">
-        <aside className="rail" aria-label="Scenario">
-          <ScenarioRail />
-        </aside>
-        <main className="stage">
-          <StageHeader />
-          <div className="stageBody">
-            {view === "network" ? <NetworkView /> : view === "table" ? <StressTable /> : <StoryView />}
-          </div>
-          <TimelinePanel />
-        </main>
-        <aside className="inspector" aria-label="Selected node">
-          <Inspector />
-        </aside>
-      </div>
+      {/* A new preset is a new story, so it starts from its first chapter. */}
+      {mode === "story" ? <StoryMode key={presetId} /> : <ExploreMode />}
     </div>
   );
 }

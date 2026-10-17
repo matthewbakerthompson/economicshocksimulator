@@ -50,7 +50,7 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         nodeId: "consumers_unemployment",
         item: {
           kind: "shock",
-          label: `Event: unemployment (+${ev.magnitude.toFixed(1)}pp)`,
+          label: `Event: unemployment (up ${ev.magnitude.toFixed(1)} points)`,
           amount: amt,
           meta: { t, eventId: ev.id, start: ev.startStep, duration: ev.durationSteps },
         },
@@ -65,7 +65,7 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         nodeId: "consumers_confidence",
         item: {
           kind: "shock",
-          label: "Event: stagflation (confidence pressure)",
+          label: "Event: stagflation (saps confidence)",
           amount: 0.24 * sev,
           meta: { t, eventId: ev.id },
         },
@@ -74,7 +74,7 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         nodeId: "consumers_demand",
         item: {
           kind: "shock",
-          label: "Event: stagflation (demand weakness)",
+          label: "Event: stagflation (cuts spending)",
           amount: 0.26 * sev,
           meta: { t, eventId: ev.id },
         },
@@ -83,7 +83,7 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         nodeId: "credit_borrow_cost",
         item: {
           kind: "shock",
-          label: "Event: stagflation (cost pressure)",
+          label: "Event: stagflation (raises borrowing costs)",
           amount: 0.20 * sev,
           meta: { t, eventId: ev.id },
         },
@@ -92,7 +92,7 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         nodeId: "markets_risk",
         item: {
           kind: "shock",
-          label: "Event: stagflation (risk-off regime)",
+          label: "Event: stagflation (raises risk aversion)",
           amount: 0.18 * sev,
           meta: { t, eventId: ev.id },
         },
@@ -113,8 +113,8 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         item: {
           kind: "shock",
           label: interaction.has("stagflation")
-            ? "Event: oil glut (relief muted by stagflation)"
-            : "Event: oil glut (cost relief)",
+            ? "Event: oil glut (eases borrowing costs, muted by stagflation)"
+            : "Event: oil glut (eases borrowing costs)",
           amount: relief,
           meta: { t, eventId: ev.id, mutedByStagflation: interaction.has("stagflation") },
         },
@@ -124,8 +124,8 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         item: {
           kind: "shock",
           label: interaction.has("stagflation")
-            ? "Event: oil glut (volatility relief muted)"
-            : "Event: oil glut (volatility relief)",
+            ? "Event: oil glut (calms volatility, muted by stagflation)"
+            : "Event: oil glut (calms volatility)",
           amount: relVol,
           meta: { t, eventId: ev.id, mutedByStagflation: interaction.has("stagflation") },
         },
@@ -134,7 +134,7 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         nodeId: "markets_liquidity",
         item: {
           kind: "shock",
-          label: "Event: oil glut (liquidity easing)",
+          label: "Event: oil glut (eases funding strain)",
           amount: -0.10 * sev * muted,
           meta: { t, eventId: ev.id },
         },
@@ -147,7 +147,7 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
         nodeId: "markets_risk",
         item: {
           kind: "shock",
-          label: "Interaction: policy/market uncertainty (oil glut in stagflation)",
+          label: "Interaction: mixed signals (an oil glut during stagflation unsettles investors)",
           amount: 0.06 * sev,
           meta: { t, eventId: ev.id, interactsWith: "stagflation" },
         },

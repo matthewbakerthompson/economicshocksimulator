@@ -1,15 +1,17 @@
 import { presetLag } from "../sim/engine";
 import { EDGES, NODES } from "../sim/graphSpec";
+import { LAYER_NAMES } from "../sim/narrative";
 import { fmtDelta, nodeLabel } from "../sim/story";
 import { useAppStore } from "../state/store";
-import { stressColor } from "../ui/colors";
+import { RELIEF, SIGNAL, stressColor } from "../ui/colors";
 import { VISIBLE, receiptRows } from "../ui/receipts";
 import { Icon } from "./Icon";
 
-const SPARK_W = 312;
-const SPARK_H = 72;
-const BAR_HALF = 42;
+const CHART_W = 300;
+const CHART_H = 64;
+const BAR_HALF = 34;
 
+/** The selected part of the economy: its stress over time, and the receipts for this month's move. */
 export function Inspector() {
   const result = useAppStore((s) => s.result);
   const t = useAppStore((s) => s.t);
@@ -27,63 +29,73 @@ export function Inspector() {
   const rows = result ? receiptRows(result, selected, t).filter((r) => Math.abs(r.amount) >= VISIBLE) : [];
   const scale = Math.max(1e-9, ...rows.map((r) => Math.abs(r.amount)));
   const outgoing = EDGES.filter((e) => e.from === selected);
+  const peak = series.length ? Math.max(...series) : 0;
+  const peakAt = series.indexOf(peak);
+
+  const change =
+    t === 0
+      ? "the starting month"
+      : Math.abs(delta) < VISIBLE
+        ? `unchanged from month ${t - 1}`
+        : `${delta > 0 ? "up" : "down"} ${Math.abs(delta).toFixed(2)} from month ${t - 1}`;
 
   return (
     <div className="inspectorInner">
       <header className="nodeHeader">
-        <p className="eyebrow">
-          {node.layer} <span className="muted">· selected node</span>
-        </p>
-        <h2 className="nodeName">{node.label}</h2>
+        <p className="layerName">{LAYER_NAMES[node.layer]}</p>
+        <h2>{node.label}</h2>
         <p className="nodeDescription">{node.description}</p>
       </header>
 
-      <section className="valueBlock" aria-label="Stress level">
-        <div className="valueRow">
-          <span className="value">
-            <span className="valueNumber">{value.toFixed(3)}</span>
-            <span className="valueUnit">at m{t}</span>
-          </span>
-          <DeltaChip delta={delta} show={t > 0} />
-        </div>
-        <Sparkline series={series} tFloat={tFloat} />
+      <section className="nodeLevel" aria-label="Stress level">
+        <p className="levelSentence">
+          <span className="levelNumber">{value.toFixed(2)}</span> in month {t}, {change}.
+        </p>
+        <NodeChart series={series} tFloat={tFloat} />
+        <p className="chartCaption">
+          <span>Month 0</span>
+          {peak > 0.005 && (
+            <span>
+              Peak {peak.toFixed(2)} in month {peakAt}
+            </span>
+          )}
+          <span>Month {Math.max(0, series.length - 1)}</span>
+        </p>
       </section>
 
       <section className="why" aria-labelledby="why-heading">
-        <div className="sectionHead">
-          <h3 id="why-heading" className="sectionTitle">
-            Why it moved
-          </h3>
-          {t > 0 && (
-            <span className="mono muted">
-              m{t - 1} → m{t}
-            </span>
-          )}
-        </div>
+        <h3 id="why-heading">{t === 0 ? "Why it moved" : `Why it moved from month ${t - 1} to ${t}`}</h3>
         {t === 0 ? (
-          <p className="empty">Month 0 is the baseline: every node starts at zero.</p>
+          <p className="empty">Month 0 is the baseline: everything starts calm.</p>
         ) : rows.length === 0 ? (
-          <p className="empty">Nothing moved this node this month.</p>
+          <p className="empty">Nothing moved this month.</p>
         ) : (
           <ul className="receipts">
             {rows.map((r) => {
               const w = Math.max(2, (Math.abs(r.amount) / scale) * BAR_HALF);
-              const title = r.from ? (
-                <button type="button" className="linkButton" onClick={() => setSelected(r.from!)}>
-                  {r.title}
-                </button>
-              ) : (
-                r.title
-              );
               return (
                 <li key={r.key} className={r.amount < 0 ? "receipt negative" : "receipt"}>
                   <span className="receiptText">
-                    <span className="receiptTitle">{title}</span>
+                    <span className="receiptTitle">
+                      {r.from ? (
+                        <button type="button" className="linkButton" onClick={() => setSelected(r.from!)}>
+                          {r.title}
+                        </button>
+                      ) : (
+                        r.title
+                      )}
+                    </span>
                     <span className="receiptDetail">{r.detail}</span>
                   </span>
                   <svg className="receiptBar" viewBox={`0 0 ${2 * BAR_HALF + 4} 10`} aria-hidden="true">
                     <line x1={BAR_HALF + 2} x2={BAR_HALF + 2} y1={0} y2={10} />
-                    <rect x={r.amount >= 0 ? BAR_HALF + 3 : BAR_HALF + 1 - w} y={1} width={w} height={8} rx={2} />
+                    <rect
+                      x={r.amount >= 0 ? BAR_HALF + 3 : BAR_HALF + 1 - w}
+                      y={1}
+                      width={w}
+                      height={8}
+                      fill={r.amount >= 0 ? SIGNAL : RELIEF}
+                    />
                   </svg>
                   <span className="receiptAmount">{fmtDelta(r.amount)}</span>
                 </li>
@@ -91,9 +103,8 @@ export function Inspector() {
             })}
             <li className="receipt net">
               <span className="receiptTitle">Net change</span>
-              <span className="mono">
-                {prev.toFixed(3)} → {value.toFixed(3)}
-                <span className="netDelta">{fmtDelta(delta)}</span>
+              <span className="receiptAmount">
+                {prev.toFixed(3)} to {value.toFixed(3)}, {fmtDelta(delta)}
               </span>
             </li>
           </ul>
@@ -102,94 +113,46 @@ export function Inspector() {
 
       {outgoing.length > 0 && (
         <section className="passes" aria-labelledby="passes-heading">
-          <h3 id="passes-heading" className="sectionTitle">
-            Passes stress to
-          </h3>
-          {outgoing.map((e) => (
-            <button key={e.id} type="button" className="passRow" onClick={() => setSelected(e.to)}>
-              <span className="dot" style={{ background: stressColor(result?.seriesByNode[e.to][t] ?? 0) }} />
-              <span className="passName">{nodeLabel(e.to)}</span>
-              <span className="mono muted">
-                w {e.weight.toFixed(2)} · lag {presetLag(e.typicalLag, lagPreset)}
-              </span>
-              <span className="spacer" />
-              <Icon name="chevron-right" />
-            </button>
-          ))}
+          <h3 id="passes-heading">Passes stress to</h3>
+          {outgoing.map((e) => {
+            const lag = presetLag(e.typicalLag, lagPreset);
+            return (
+              <button key={e.id} type="button" className="passRow" onClick={() => setSelected(e.to)}>
+                <span className="swatch" style={{ background: stressColor(result?.seriesByNode[e.to][t] ?? 0) }} />
+                <span className="passText">
+                  <span className="passName">{nodeLabel(e.to)}</span>
+                  <span className="passDetail">
+                    Weight {e.weight.toFixed(2)}, {lag === 0 ? "no lag" : `${lag}-month lag`}
+                  </span>
+                </span>
+                <Icon name="chevron-right" size={16} />
+              </button>
+            );
+          })}
         </section>
       )}
 
       <p className="footnote">
-        Receipts are directional attributions under the model's assumptions, not causal estimates. They always sum to
-        the change.
+        Receipts are attributions under the model's assumptions, not causal estimates. They add up to the change.
       </p>
     </div>
   );
 }
 
-function DeltaChip({ delta, show }: { delta: number; show: boolean }) {
-  if (!show) return null;
-  if (Math.abs(delta) < 0.0005) return <span className="deltaChip flat">no change</span>;
-  const up = delta > 0;
-  return (
-    <span className={up ? "deltaChip up" : "deltaChip down"}>
-      <Icon name={up ? "arrow-up-right" : "arrow-down-right"} size={13} />
-      {fmtDelta(delta)}
-    </span>
-  );
-}
-
-function Sparkline({ series, tFloat }: { series: number[]; tFloat: number }) {
-  if (series.length < 2) return <div className="sparkline" />;
+/** Stress over the whole run, with the playhead. Lines only, so it stays legible at any width. */
+function NodeChart({ series, tFloat }: { series: number[]; tFloat: number }) {
+  if (series.length < 2) return <div className="nodeChart" />;
   const n = series.length - 1;
-  const x = (i: number) => (i / n) * SPARK_W;
-  const y = (v: number) => SPARK_H - v * SPARK_H;
+  const x = (i: number) => (i / n) * CHART_W;
+  const y = (v: number) => CHART_H - 2 - v * (CHART_H - 4);
   const line = series.map((v, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(" ");
   const at = Math.max(0, Math.min(n, tFloat));
-  const i0 = Math.floor(at);
-  const vNow = series[i0] + ((series[Math.min(n, i0 + 1)] ?? series[i0]) - series[i0]) * (at - i0);
-  const peak = Math.max(...series);
-  const peakAt = series.indexOf(peak);
-  const peakRight = peakAt > n * 0.6;
-
   return (
-    <svg
-      className="sparkline"
-      viewBox={`0 0 ${SPARK_W} ${SPARK_H + 18}`}
-      role="img"
-      aria-label={`Stress over time, peaking at ${peak.toFixed(3)} in month ${peakAt}`}
-    >
-      <defs>
-        <linearGradient id="sparkFill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#e2516b" stopOpacity={0.35} />
-          <stop offset="1" stopColor="#e2516b" stopOpacity={0} />
-        </linearGradient>
-      </defs>
-      <line className="grid" x1={0} x2={SPARK_W} y1={SPARK_H / 2} y2={SPARK_H / 2} />
-      <line className="baseline" x1={0} x2={SPARK_W} y1={SPARK_H - 0.5} y2={SPARK_H - 0.5} />
-      <path d={`${line} L${SPARK_W} ${SPARK_H} L0 ${SPARK_H} Z`} fill="url(#sparkFill)" />
-      <path d={line} className="sparkLine" />
-      <line className="playhead" x1={x(at)} x2={x(at)} y1={0} y2={SPARK_H} />
-      <circle className="playheadDot" cx={x(at)} cy={y(vNow)} r={4} />
-      <text className="axis" x={SPARK_W} y={SPARK_H / 2 - 4} textAnchor="end">
-        0.5
-      </text>
-      <text className="axis" x={0} y={SPARK_H + 14}>
-        m0
-      </text>
-      <text className="axis" x={SPARK_W} y={SPARK_H + 14} textAnchor="end">
-        m{n}
-      </text>
-      {peak > 0.001 && (
-        <text
-          className="peakNote"
-          x={x(peakAt) + (peakRight ? -8 : 8)}
-          y={Math.max(10, y(peak) - 6)}
-          textAnchor={peakRight ? "end" : "start"}
-        >
-          peak {peak.toFixed(3)} · m{peakAt}
-        </text>
-      )}
+    <svg className="nodeChart" viewBox={`0 0 ${CHART_W} ${CHART_H}`} preserveAspectRatio="none" aria-hidden="true">
+      <line className="grid" x1={0} x2={CHART_W} y1={y(0.5)} y2={y(0.5)} vectorEffect="non-scaling-stroke" />
+      <line className="baseline" x1={0} x2={CHART_W} y1={y(0)} y2={y(0)} vectorEffect="non-scaling-stroke" />
+      <path d={line} className="nodeLine" vectorEffect="non-scaling-stroke" />
+      <line className="playhead" x1={x(at)} x2={x(at)} y1={0} y2={CHART_H} vectorEffect="non-scaling-stroke" />
     </svg>
   );
 }

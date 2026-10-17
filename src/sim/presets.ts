@@ -22,9 +22,10 @@ export const PRESETS: Preset[] = [
     events: [{ id: "preset_unemployment", type: "unemployment", magnitude: 1.0, startStep: 1, durationSteps: 4 }],
   },
   {
-    id: "oil_glut",
-    label: "Oil glut on its own",
-    events: [{ id: "preset_oil_glut", type: "oil_glut", magnitude: 0.8, startStep: 1, durationSteps: 6 }],
+    // The first preset without its oil glut and job losses, for comparison.
+    id: "stagflation",
+    label: "Stagflation alone",
+    events: [{ id: "preset_stagflation", type: "stagflation", magnitude: 0.65, startStep: 0, durationSteps: 10 }],
   },
   { id: "blank", label: "Blank: no events", events: [] },
 ];

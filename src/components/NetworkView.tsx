@@ -4,7 +4,8 @@ import { presetLag } from "../sim/engine";
 import { EDGES, NODES } from "../sim/graphSpec";
 import type { NodeId, SimulationResult } from "../sim/types";
 import { useAppStore } from "../state/store";
-import { FOCUS_COLOR, RELIEF_COLOR, stressColor, stressPosition } from "../ui/colors";
+import { CONTEXT, RELIEF, SIGNAL, stressColor, stressPosition } from "../ui/colors";
+import { LAYER_NAMES } from "../sim/narrative";
 import { LAYER_BANDS, NODE_POSITIONS, NODE_RADIUS, VIEW, edgeGeometry, labelLines } from "../ui/networkLayout";
 
 /** A node's stress at a fractional month, interpolated so playback moves smoothly. */
@@ -24,6 +25,7 @@ export function NetworkView() {
   const lagPreset = useAppStore((s) => s.scenario.lagPreset);
   const selected = useAppStore((s) => s.selectedNodeId);
   const hover = useAppStore((s) => s.hoverNodeId);
+  const isPlaying = useAppStore((s) => s.isPlaying);
   const setSelected = useAppStore((s) => s.setSelectedNodeId);
   const setHover = useAppStore((s) => s.setHoverNodeId);
 
@@ -66,9 +68,9 @@ export function NetworkView() {
             <g key={b.layer} className="band">
               {i > 0 && <line x1={b.x0} x2={b.x0} y1={8} y2={VIEW.height - 8} />}
               <text x={b.x0 + 16} y={18} className="bandLabel">
-                {b.layer.toUpperCase()}
+                {LAYER_NAMES[b.layer]}
                 <tspan className="bandMean" dx={8}>
-                  avg {mean.toFixed(2)}
+                  {mean.toFixed(2)} average
                 </tspan>
               </text>
             </g>
@@ -81,8 +83,8 @@ export function NetworkView() {
             const lag = presetLag(e.typicalLag, lagPreset);
             const v = stressAt(result, e.from, tFloat - lag);
             const hot = e.from === focus || e.to === focus;
-            const color = hot ? FOCUS_COLOR : stressColor(Math.max(0.05, v));
-            const opacity = hot ? 1 : 0.2 + 0.45 * stressPosition(v);
+            const color = hot ? SIGNAL : CONTEXT;
+            const opacity = hot ? 1 : 0.35 + 0.55 * stressPosition(v);
             const flow = flows.get(e.id) ?? 0;
             return (
               <g key={e.id}>
@@ -93,11 +95,11 @@ export function NetworkView() {
                   strokeOpacity={opacity}
                   strokeWidth={(hot ? 1.25 : 0.75) + 2 * e.weight}
                 />
-                {Math.abs(flow) > 0.001 && (
+                {isPlaying && Math.abs(flow) > 0.001 && (
                   <path
                     d={g.path}
                     className="edgeFlow"
-                    stroke={flow > 0 ? "#fff3e8" : RELIEF_COLOR}
+                    stroke={flow > 0 ? SIGNAL : RELIEF}
                     strokeOpacity={Math.min(0.9, 0.3 + Math.abs(flow) * 12)}
                   />
                 )}

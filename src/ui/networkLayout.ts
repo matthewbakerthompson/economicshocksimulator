@@ -76,7 +76,7 @@ export function edgeGeometry(e: EdgeSpec): EdgeGeometry {
 
 /** Splits long labels onto two lines so they fit under a node. */
 export function labelLines(label: string): string[] {
-  if (label.length <= 14 || !label.includes(" ")) return [label];
+  if (label.length <= 16 || !label.includes(" ")) return [label];
   const i = label.indexOf(" ");
   return [label.slice(0, i), label.slice(i + 1)];
 }

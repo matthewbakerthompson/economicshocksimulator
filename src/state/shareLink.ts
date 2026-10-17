@@ -5,12 +5,16 @@ import type { BufferPreset, CausalEvent, EventType, LagPreset, NodeId, Scenario 
 /**
  * A scenario in the URL hash, readable by eye:
  *
- *   #events=s0.65@0-9,o0.7@3-7,u1.5@2-7&lags=medium&buffers=medium&horizon=24&month=12&node=consumers_delinquency
+ *   #view=explore&events=s0.65@0-9,o0.7@3-7,u1.5@2-7&lags=medium&buffers=medium&horizon=24&month=12&node=consumers_delinquency
  *
  * Each event is a type letter (u, s, o), its magnitude, and its first and last month.
- * Decoding never throws: anything missing or invalid falls back to the default.
+ * Decoding never throws: anything missing or invalid falls back to the default. Links from
+ * before the story view existed have no `view` and open in the explorer, where they were made.
  */
+export type Mode = "story" | "explore";
+
 export type ShareState = {
+  mode: Mode;
   scenario: Scenario;
   steps: number;
   t: number;
@@ -41,7 +45,7 @@ export function encodeShareHash(s: ShareState): string {
     .map((e) => `${CODES[e.type]}${round(e.magnitude)}@${e.startStep}-${e.startStep + e.durationSteps - 1}`)
     .join(",");
   return (
-    `#events=${events}&lags=${s.scenario.lagPreset}&buffers=${s.scenario.bufferPreset}` +
+    `#view=${s.mode}&events=${events}&lags=${s.scenario.lagPreset}&buffers=${s.scenario.bufferPreset}` +
     `&horizon=${s.steps}&month=${s.t}&node=${s.selectedNodeId}`
   );
 }
@@ -94,7 +98,9 @@ export function decodeShareHash(hash: string, fallback: ShareState): DecodedLink
   const node = params.get("node") as NodeId;
 
   const preset = PRESETS.find((p) => sameEvents(p.events, events));
+  const view = params.get("view");
   return {
+    mode: view === "story" ? "story" : "explore",
     scenario: {
       events: preset ? preset.events : events,
       lagPreset: LAGS.includes(lag) ? lag : fallback.scenario.lagPreset,

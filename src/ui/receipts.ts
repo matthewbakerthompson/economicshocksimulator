@@ -16,6 +16,20 @@ function pct(x: number): string {
   return `${(x * 100).toFixed(1).replace(/\.0$/, "")}%`;
 }
 
+function lagText(lag: number): string {
+  return lag === 0 ? "Same month" : `${lag}-month lag`;
+}
+
+function eventTitle(label: string): string {
+  const name = label.replace(/^(Event|Interaction): /, "").replace(/ \(.*\)$/, "");
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function eventDetail(label: string): string {
+  const inner = /\((.*)\)$/.exec(label)?.[1];
+  return inner ? `Direct effect: ${inner}.` : "Direct effect of the event.";
+}
+
 function toRow(nodeId: NodeId, it: ReceiptItem, i: number): ReceiptRow | null {
   switch (it.kind) {
     case "shock":
@@ -23,8 +37,9 @@ function toRow(nodeId: NodeId, it: ReceiptItem, i: number): ReceiptRow | null {
       return {
         key: `shock_${i}`,
         kind: it.kind,
-        title: it.label.replace(/^Event: /, "").replace(/^\w/, (c) => c.toUpperCase()),
-        detail: "event shock",
+        // Event labels read "Event: stagflation (confidence pressure)".
+        title: eventTitle(it.label),
+        detail: eventDetail(it.label),
         amount: it.amount,
       };
     case "edge": {
@@ -34,7 +49,7 @@ function toRow(nodeId: NodeId, it: ReceiptItem, i: number): ReceiptRow | null {
         key: `edge_${from}`,
         kind: it.kind,
         title: nodeLabel(from),
-        detail: `${edge?.label ?? "channel"} · lag ${it.meta?.lag} · w ${Number(it.meta?.weight).toFixed(2)}`,
+        detail: `${edge?.label ?? "Channel"}. ${lagText(Number(it.meta?.lag))}, weight ${Number(it.meta?.weight).toFixed(2)}.`,
         amount: it.amount,
         from,
       };
@@ -44,15 +59,15 @@ function toRow(nodeId: NodeId, it: ReceiptItem, i: number): ReceiptRow | null {
         key: "buffers",
         kind: it.kind,
         title: "Buffers",
-        detail: `absorb ${pct(Number(it.meta?.strength))} of the stress carried in`,
+        detail: `Absorb ${pct(Number(it.meta?.strength))} of the stress carried into the month.`,
         amount: it.amount,
       };
     case "clamp":
       return {
         key: "clamp",
         kind: it.kind,
-        title: it.amount < 0 ? "Cap at 1" : "Floor at 0",
-        detail: "stress stays within 0–1",
+        title: it.amount < 0 ? "Capped at 1" : "Floored at 0",
+        detail: it.amount < 0 ? "Stress can't go above 1, the most severe." : "Relief can't take stress below 0, calm.",
         amount: it.amount,
       };
   }
