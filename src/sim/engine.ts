@@ -22,7 +22,7 @@ export function presetLag(typicalLag: number, preset: Scenario["lagPreset"]): nu
   }
 }
 
-function dampeningStrength(preset: Scenario["bufferPreset"]): number {
+export function dampeningStrength(preset: Scenario["bufferPreset"]): number {
   // Higher buffers = stronger dampening.
   switch (preset) {
     case "low":

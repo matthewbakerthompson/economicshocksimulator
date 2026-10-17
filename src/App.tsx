@@ -1,50 +1,46 @@
-import { ControlsPanel } from "./components/ControlsPanel";
-import { ExplainabilityPanel } from "./components/ExplainabilityPanel";
-import { GraphView } from "./components/GraphView";
-import { Timeline } from "./components/Timeline";
+import { useEffect, useRef } from "react";
+import { Inspector } from "./components/Inspector";
+import { NetworkView } from "./components/NetworkView";
+import { ScenarioRail } from "./components/ScenarioRail";
+import { StageHeader } from "./components/StageHeader";
+import { TimelinePanel } from "./components/TimelinePanel";
+import { TopBar } from "./components/TopBar";
 import { useAppStore } from "./state/store";
 
 export function App() {
-  const selectedNodeId = useAppStore((s) => s.selectedNodeId);
+  const result = useAppStore((s) => s.result);
+  const started = useRef(false);
+
+  useEffect(() => {
+    void useAppStore.getState().runSimulation();
+  }, []);
+
+  // Play the first run through once, unless the visitor prefers reduced motion; then
+  // open on a month where the cascade is well under way.
+  useEffect(() => {
+    if (!result || started.current) return;
+    started.current = true;
+    const st = useAppStore.getState();
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) st.setT(Math.min(12, result.steps - 1));
+    else st.setIsPlaying(true);
+  }, [result]);
 
   return (
-    <div className="appShell">
-      <div className="panel sideLeft">
-        <div className="panelHeader">
-          <h2>Scenario</h2>
-        </div>
-        <div className="panelBody">
-          <ControlsPanel />
-          <div className="hr" />
-          <div className="muted">
-            This is <strong>directional stress modeling</strong> under stated assumptions. It is not forecasting.
-          </div>
-        </div>
-      </div>
-
-      <div className="panel graphPanel">
-        <div className="graphCanvas">
-          <GraphView />
-        </div>
-      </div>
-
-      <div className="panel timelinePanel">
-        <div className="panelBody">
-          <Timeline />
-        </div>
-      </div>
-
-      <div className="panel sideRight">
-        <div className="panelHeader">
-          <h2>Explainability</h2>
-        </div>
-        <div className="panelBody">
-          <ExplainabilityPanel key={selectedNodeId ?? "none"} />
-        </div>
+    <div className="app">
+      <TopBar />
+      <div className="workspace">
+        <aside className="rail" aria-label="Scenario">
+          <ScenarioRail />
+        </aside>
+        <main className="stage">
+          <StageHeader />
+          <NetworkView />
+          <TimelinePanel />
+        </main>
+        <aside className="inspector" aria-label="Selected node">
+          <Inspector />
+        </aside>
       </div>
     </div>
   );
 }
-
-
-
