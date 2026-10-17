@@ -69,7 +69,7 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
   const months = result?.steps ?? 0;
   const last = Math.max(1, months - 1);
   const narrow = width < 520;
-  const labelW = narrow ? 112 : mode === "explore" ? (width < 760 ? 168 : 200) : 176;
+  const labelW = narrow ? 112 : mode === "explore" ? (width < 700 ? 168 : 200) : 176;
   const x0 = labelW;
   const x1 = Math.max(x0 + 10, width - 14);
   const x = (m: number) => x0 + (m / last) * (x1 - x0);
