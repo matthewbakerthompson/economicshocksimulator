@@ -2,6 +2,8 @@ import { EDGES, NODES } from "./graphSpec";
 import type { NodeId, ReceiptItem, Scenario, SimulationResult } from "./types";
 import { buildStepEventEffects } from "./events";
 
+const NODE_LABELS = Object.fromEntries(NODES.map((n) => [n.id, n.label])) as Record<NodeId, string>;
+
 function clamp01(x: number): number {
   return Math.max(0, Math.min(1, x));
 }
@@ -22,7 +24,7 @@ export function presetLag(typicalLag: number, preset: Scenario["lagPreset"]): nu
   }
 }
 
-function dampeningStrength(preset: Scenario["bufferPreset"]): number {
+export function dampeningStrength(preset: Scenario["bufferPreset"]): number {
   // Higher buffers = stronger dampening.
   switch (preset) {
     case "low":
@@ -102,7 +104,7 @@ export function simulateScenario(scenario: Scenario, steps: number): SimulationR
       inflow[e.to] += flow;
       stepReceipts[e.to].push({
         kind: "edge",
-        label: `${e.label} from ${e.from}`,
+        label: `${e.label}, from ${NODE_LABELS[e.from]}`,
         amount: flow,
         meta: { from: e.from, lag, weight: e.weight, edgeWeightMult },
       });

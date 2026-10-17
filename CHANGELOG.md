@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+**A new interface built around the cascade and its receipts.** The network is
+drawn in three layers (consumers, credit, markets), so stress visibly moves from
+households to banks to markets. A heatmap of every node in every month shows the
+whole run at a glance. The inspector explains the selected node's move with bars
+that sum to the change, and links to the channels that caused it.
+
+### Interface
+- The network is an accessible SVG with labeled nodes, replacing the Sigma
+  WebGL graph and its overlay. sigma and graphology are no longer dependencies.
+- Each month gets a headline (its biggest move) and a line on which events are
+  active, have ended or are still to come, replacing the story console.
+- Every edit re-runs the model; there is no Run button. The app opens on a
+  preset, plays it through once, and starts at month 12 instead for visitors
+  who prefer reduced motion.
+- Presets, segmented controls for lags, buffers and a 12, 18 or 24-month
+  horizon, and keyboard control of the timeline.
+- Layouts for tablets and phones.
+- Shareable links: the URL hash holds the scenario, month and selected node, a
+  Copy link button copies it, and bad or old links fall back to the default.
+- A table view of every node's stress, change and peak, and a story view that
+  tells the run month by month in plain language, with no ids or repeats.
+- Stress colors use a square-root scale, so small shocks show downstream; the
+  legend says so.
+- Every input has an accessible name with its units.
+- Receipts name the source node rather than its id, and channels too small to
+  print fold into one row.
+
 ## 0.2.0 (2026-10-17)
 
 **Shocks no longer saturate the graph.** Before, any shock, even half a point of
