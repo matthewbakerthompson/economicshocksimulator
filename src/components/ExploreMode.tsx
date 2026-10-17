@@ -80,7 +80,6 @@ export function ExploreMode() {
   const t = useAppStore((s) => s.t);
   const view = useAppStore((s) => s.exploreView);
   const setView = useAppStore((s) => s.setExploreView);
-  const selected = useAppStore((s) => s.selectedNodeId);
   const [expanded, setExpanded] = useState<LayerId | null>("Consumers");
 
   const narrative = useMemo(() => (result ? buildNarrative(result, scenario) : null), [result, scenario]);
@@ -163,7 +162,7 @@ export function ExploreMode() {
         </div>
       </main>
 
-      <aside className="inspector" aria-label={`Selected: ${selected}`}>
+      <aside className="inspector" aria-label="Why the selected part moved">
         <Inspector />
       </aside>
     </div>
