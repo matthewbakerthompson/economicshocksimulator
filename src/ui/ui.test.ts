@@ -28,16 +28,16 @@ describe("receiptRows", () => {
   it("names the channels and puts buffers after the drivers", () => {
     const rows = receiptRows(r, "consumers_delinquency", 12);
     expect(rows.map((row) => row.title)).toEqual([
-      "Income Stress",
-      "Borrow Costs",
-      "Credit Access",
+      "Income squeeze",
+      "Borrowing costs",
+      "Credit squeeze",
       "Buffers",
     ]);
     expect(rows[0]).toMatchObject({
       from: "consumers_income",
-      detail: "Income → delinquencies · lag 2 · w 0.52",
+      detail: "Squeezed incomes mean missed payments. 2-month lag, weight 0.52.",
     });
-    expect(rows[3].detail).toBe("absorb 5% of the stress carried in");
+    expect(rows[3].detail).toBe("Absorb 5% of the stress carried into the month.");
   });
 
   it("folds channels too small to print into one row", () => {
@@ -61,10 +61,10 @@ describe("receiptRows", () => {
       },
     };
     const rows = receiptRows(fake, "consumers_delinquency", 1);
-    expect(rows.map((row) => row.title)).toEqual(["Income Stress", "2 smaller channels", "Buffers"]);
+    expect(rows.map((row) => row.title)).toEqual(["Income squeeze", "2 smaller channels", "Buffers"]);
     expect(rows[1].amount).toBeCloseTo(0.0001, 12);
     expect(rows.reduce((sum, row) => sum + row.amount, 0)).toBeCloseTo(0.0201, 12);
-    expect(namedDrivers(rows).map((row) => row.title)).toEqual(["Income Stress"]);
+    expect(namedDrivers(rows).map((row) => row.title)).toEqual(["Income squeeze"]);
     expect(Math.abs(namedDrivers(rows)[0].amount)).toBeGreaterThanOrEqual(VISIBLE);
   });
 
@@ -103,16 +103,16 @@ describe("network layout", () => {
   });
 
   it("wraps only long labels", () => {
-    expect(labelLines("Unemployment")).toEqual(["Unemployment"]);
-    expect(labelLines("Credit Standards")).toEqual(["Credit", "Standards"]);
+    expect(labelLines("Savings drawdown")).toEqual(["Savings drawdown"]);
+    expect(labelLines("A rather longer label")).toEqual(["A", "rather longer label"]);
   });
 });
 
 describe("stressColor", () => {
-  it("runs from the calm slate to the severe amber, clamping outside 0–1", () => {
+  it("runs from a calm grey to a deep vermilion, clamping outside 0–1", () => {
     expect(stressColor(-1)).toBe(stressColor(0));
-    expect(stressColor(0)).toBe("#1b2233");
-    expect(stressColor(2)).toBe("#ffb45e");
+    expect(stressColor(0)).toBe("#ecebe8");
+    expect(stressColor(2)).toBe("#6e1b0f");
   });
 
   it("uses a square-root scale, so small stress is visible", () => {

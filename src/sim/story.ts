@@ -15,7 +15,6 @@ export type MonthStory = {
 const PLURAL = new Set<NodeId>([
   "consumers_delinquency",
   "credit_bank_losses",
-  "credit_standards",
   "credit_borrow_cost",
 ]);
 

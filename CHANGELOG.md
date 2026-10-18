@@ -2,32 +2,42 @@
 
 ## Unreleased
 
-**A new interface built around the cascade and its receipts.** The network is
-drawn in three layers (consumers, credit, markets), so stress visibly moves from
-households to banks to markets. A heatmap of every node in every month shows the
-whole run at a glance. The inspector explains the selected node's move with bars
-that sum to the change, and links to the channels that caused it.
+**The simulator now tells a story.** It opens on the run's finding as a headline,
+for example "Three overlapping shocks reach the banks within 5 months, and 14
+months after they end, bank stress is still 86% of its peak", and walks through
+the run in chapters written from the data: the shocks land, each layer peaks in
+the order it happens, then the aftermath. The full model is one click away in
+Explore.
 
-### Interface
-- The network is an accessible SVG with labeled nodes, replacing the Sigma
-  WebGL graph and its overlay. sigma and graphology are no longer dependencies.
-- Each month gets a headline (its biggest move) and a line on which events are
-  active, have ended or are still to come, replacing the story console.
-- Every edit re-runs the model; there is no Run button. The app opens on a
-  preset, plays it through once, and starts at month 12 instead for visitors
-  who prefer reduced motion.
-- Presets, segmented controls for lags, buffers and a 12, 18 or 24-month
-  horizon, and keyboard control of the timeline.
-- Layouts for tablets and phones.
-- Shareable links: the URL hash holds the scenario, month and selected node, a
-  Copy link button copies it, and bad or old links fall back to the default.
-- A table view of every node's stress, change and peak, and a story view that
-  tells the run month by month in plain language, with no ids or repeats.
-- Stress colors use a square-root scale, so small shocks show downstream; the
-  legend says so.
-- Every input has an accessible name with its units.
-- Receipts name the source node rather than its id, and channels too small to
-  print fold into one row.
+### Story and explore
+- A guided story with Play, Back, Next, Replay and Restart. Each chapter plays its
+  months and stops; nothing plays until you ask. The story ends on "That's the
+  story" and hands over to Explore.
+- The chart is three stress bands (households, banks and credit, markets) over the
+  months, with each event's window, the chapter's months shaded, the peaks marked
+  and an arrow for the lag between peaks. In Explore each band opens into its parts.
+- Explore keeps the scenario editor, a map of the network, a table, and the
+  receipts, now written as sentences. Restart and step controls sit with Play.
+- Links carry the view and month; a story link with a month opens on its chapter.
+
+### Clarity
+- Parts of the economy are named for the pressure they measure (Confidence loss,
+  Savings drawdown, Capital strain, Credit squeeze, Liquidity strain…), so a higher
+  number always reads as worse. Channels are described as mechanisms ("Missed
+  payments become loan losses").
+- Plain words replace abbreviations, values show two decimals outside the
+  receipts, and stress is defined where you read it.
+- "Oil glut on its own" is replaced by "Stagflation alone": relief on a calm
+  economy changes nothing, and the story now says so when you build that case.
+
+### Design
+- A light chart-desk look: a white page, grey structure, one vermilion ink for
+  stress on a square-root scale, and one typeface (Libre Franklin) with tabular
+  figures. No mono labels, uppercase eyebrows, pills or gradients.
+- Accessible: text contrast of at least 5:1, touch targets of at least 24px,
+  announcements only when a chapter changes, motion only while playing, and full
+  keyboard control of the chart.
+- New events start at the month you're looking at; a failed run says so.
 
 ## 0.2.0 (2026-10-17)
 

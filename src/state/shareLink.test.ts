@@ -3,6 +3,7 @@ import { presetById } from "../sim/presets";
 import { type ShareState, decodeShareHash, encodeShareHash } from "./shareLink";
 
 const fallback: ShareState = {
+  mode: "story",
   scenario: { events: presetById("stagflation_oil")!.events, lagPreset: "medium", bufferPreset: "medium" },
   steps: 24,
   t: 0,
@@ -10,6 +11,7 @@ const fallback: ShareState = {
 };
 
 const custom: ShareState = {
+  mode: "explore",
   scenario: {
     events: [
       { id: "a", type: "unemployment", magnitude: 2.5, startStep: 1, durationSteps: 6 },
@@ -26,13 +28,14 @@ const custom: ShareState = {
 describe("share links", () => {
   it("writes a readable hash", () => {
     expect(encodeShareHash(custom)).toBe(
-      "#events=u2.5@1-6,o0.45@8-8&lags=long&buffers=low&horizon=18&month=9&node=markets_liquidity"
+      "#view=explore&events=u2.5@1-6,o0.45@8-8&lags=long&buffers=low&horizon=18&month=9&node=markets_liquidity"
     );
   });
 
   it("round-trips a custom scenario", () => {
     const link = decodeShareHash(encodeShareHash(custom), fallback)!;
     expect(link.presetId).toBe("custom");
+    expect(link.mode).toBe("explore");
     expect(link.hasMonth).toBe(true);
     expect(link.steps).toBe(18);
     expect(link.t).toBe(9);

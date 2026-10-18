@@ -3,40 +3,28 @@ import { dampeningStrength } from "../sim/engine";
 import { eventName } from "../sim/story";
 import type { BufferPreset, CausalEvent, EventType, LagPreset } from "../sim/types";
 import { HORIZONS, useAppStore } from "../state/store";
-import { EVENT_COLORS } from "../ui/colors";
 import { Icon } from "./Icon";
 import { Segmented } from "./Segmented";
 
 const EVENT_TYPES: Array<{ type: EventType; blurb: string }> = [
-  { type: "unemployment", blurb: "Joblessness rises by a number of percentage points." },
-  { type: "stagflation", blurb: "Prices rise while growth stalls; stress lingers and spreads harder." },
-  { type: "oil_glut", blurb: "Cheap oil eases borrowing costs, volatility and liquidity." },
+  { type: "unemployment", blurb: "Unemployment rises by a number of percentage points." },
+  { type: "stagflation", blurb: "Prices rise while growth stalls. Stress spreads harder and lingers." },
+  { type: "oil_glut", blurb: "Cheap oil eases borrowing costs, volatility and funding strain." },
 ];
 
-const MAGNITUDE: Record<EventType, { max: number; step: number; initial: number; unit: string }> = {
-  unemployment: { max: 6, step: 0.1, initial: 1, unit: "pp" },
-  stagflation: { max: 1, step: 0.05, initial: 0.6, unit: "severity" },
-  oil_glut: { max: 1, step: 0.05, initial: 0.6, unit: "severity" },
+const MAGNITUDE: Record<EventType, { max: number; step: number; initial: number }> = {
+  unemployment: { max: 6, step: 0.1, initial: 1 },
+  stagflation: { max: 1, step: 0.05, initial: 0.6 },
+  oil_glut: { max: 1, step: 0.05, initial: 0.6 },
 };
 
-function magnitudeText(ev: CausalEvent): string {
-  return ev.type === "unemployment" ? `+${ev.magnitude.toFixed(1)} pp` : `sev ${ev.magnitude.toFixed(2)}`;
+function size(ev: CausalEvent): string {
+  return ev.type === "unemployment" ? `up ${ev.magnitude.toFixed(1)} points` : `severity ${ev.magnitude.toFixed(2)}`;
 }
 
-function windowText(ev: CausalEvent): string {
+function months(ev: CausalEvent): string {
   const end = ev.startStep + ev.durationSteps - 1;
-  return end > ev.startStep ? `m${ev.startStep}–${end}` : `m${ev.startStep}`;
-}
-
-function describeWindow(ev: CausalEvent): string {
-  const size =
-    ev.type === "unemployment" ? `${ev.magnitude.toFixed(1)} percentage points` : `severity ${ev.magnitude.toFixed(2)}`;
-  const end = ev.startStep + ev.durationSteps - 1;
-  return `${size}, ${end > ev.startStep ? `months ${ev.startStep} to ${end}` : `month ${ev.startStep}`}`;
-}
-
-function ticks(steps: number): number[] {
-  return [0, steps / 4, steps / 2, (3 * steps) / 4].map(Math.round).concat(steps - 1);
+  return end > ev.startStep ? `months ${ev.startStep} to ${end}` : `month ${ev.startStep}`;
 }
 
 let nextId = 0;
@@ -44,6 +32,7 @@ let nextId = 0;
 export function ScenarioRail() {
   const scenario = useAppStore((s) => s.scenario);
   const steps = useAppStore((s) => s.steps);
+  const t = useAppStore((s) => s.t);
   const setScenario = useAppStore((s) => s.setScenario);
   const setSteps = useAppStore((s) => s.setSteps);
   const events = scenario.events;
@@ -78,12 +67,14 @@ export function ScenarioRail() {
     setScenario({ events: events.map((e) => (e.id === id ? { ...e, ...patch } : e)) });
 
   const add = (type: EventType) => {
+    // A new shock starts where you're looking, so its effect shows up straight away.
+    const start = Math.max(0, Math.min(t, steps - 2));
     const ev: CausalEvent = {
       id: `ev_${type}_${nextId++}`,
       type,
       magnitude: MAGNITUDE[type].initial,
-      startStep: 1,
-      durationSteps: Math.min(4, steps - 1),
+      startStep: start,
+      durationSteps: Math.min(4, steps - start),
     };
     setScenario({ events: [...events, ev] });
     setSelectedId(ev.id);
@@ -91,150 +82,133 @@ export function ScenarioRail() {
   };
 
   const remove = (id: string) => setScenario({ events: events.filter((e) => e.id !== id) });
-
-  const bufferPct = `${(dampeningStrength(scenario.bufferPreset) * 100).toFixed(1).replace(/\.0$/, "")}%`;
+  const bufferPct = (p: BufferPreset) => `${(dampeningStrength(p) * 100).toFixed(1).replace(/\.0$/, "")}%`;
 
   return (
     <div className="railInner">
-      <section className="railSection" aria-labelledby="events-heading">
-        <div className="sectionHead">
-          <h2 id="events-heading" className="sectionTitle">
-            Events <span className="sectionCount">{events.length} stacked</span>
-          </h2>
-          <div className="menuAnchor" ref={menuRef}>
-            <button
-              type="button"
-              className="button"
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((o) => !o)}
-            >
-              <Icon name="plus" size={14} />
-              Add event
-            </button>
-            {menuOpen && (
-              <div className="menu" role="menu">
-                {EVENT_TYPES.map(({ type, blurb }) => (
-                  <button key={type} type="button" role="menuitem" className="menuItem" onClick={() => add(type)}>
-                    <span className="dot" style={{ background: EVENT_COLORS[type] }} />
-                    <span>
-                      <span className="menuItemTitle">{eventName(type)}</span>
-                      <span className="menuItemBlurb">{blurb}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      <section className="railSection" aria-labelledby="scenario-heading">
+        <h2 id="scenario-heading">Your scenario</h2>
+        <p className="railIntro">Stack shocks on the timeline. Every change re-runs the model.</p>
 
         {events.length === 0 ? (
-          <p className="empty">No events yet. Add one to shock the system, or pick a preset at the top.</p>
+          <p className="empty">No shocks yet, so the economy stays calm. Add one below.</p>
         ) : (
-          <>
-            <div className="monthTicks" aria-hidden="true">
-              {ticks(steps).map((m) => (
-                <span key={m}>m{m}</span>
+          <ul className="eventList">
+            {events.map((ev, i) => {
+              const open = ev.id === openId;
+              const sameType = events.filter((e) => e.type === ev.type);
+              const name =
+                sameType.length > 1
+                  ? `${eventName(ev.type)} ${events.slice(0, i + 1).filter((e) => e.type === ev.type).length}`
+                  : eventName(ev.type);
+              const left = Math.min(ev.startStep, steps) / steps;
+              const width = Math.max(0, Math.min(ev.durationSteps, steps - ev.startStep)) / steps;
+              const m = MAGNITUDE[ev.type];
+              return (
+                <li key={ev.id} className={open ? "eventItem open" : "eventItem"}>
+                  <button
+                    type="button"
+                    className="eventHead"
+                    aria-expanded={open}
+                    onClick={() => setSelectedId(open ? null : ev.id)}
+                  >
+                    <span className="eventName">{name}</span>
+                    <span className="eventMeta">
+                      {size(ev)}, {months(ev)}
+                    </span>
+                    <Icon name={open ? "chevron-down" : "chevron-right"} size={15} />
+                  </button>
+                  <div className="eventTrack" aria-hidden="true">
+                    <span style={{ left: `${left * 100}%`, width: `${width * 100}%` }} />
+                  </div>
+                  {open && (
+                    <div className="eventEditor">
+                      <label className="field">
+                        <span className="fieldRow">
+                          <span>{ev.type === "unemployment" ? "Size, in percentage points" : "Severity, 0 to 1"}</span>
+                          <span className="fieldValue">
+                            {ev.type === "unemployment" ? ev.magnitude.toFixed(1) : ev.magnitude.toFixed(2)}
+                          </span>
+                        </span>
+                        <input
+                          type="range"
+                          aria-label={
+                            ev.type === "unemployment" ? `${name} size, percentage points` : `${name} severity, 0 to 1`
+                          }
+                          aria-valuetext={size(ev)}
+                          min={0}
+                          max={m.max}
+                          step={m.step}
+                          value={ev.magnitude}
+                          onChange={(e) => update(ev.id, { magnitude: parseFloat(e.target.value) })}
+                        />
+                      </label>
+                      <div className="steppers">
+                        <Stepper
+                          label="Starts in month"
+                          value={String(ev.startStep)}
+                          onDec={() => update(ev.id, { startStep: Math.max(0, ev.startStep - 1) })}
+                          onInc={() => {
+                            const startStep = Math.min(steps - 1, ev.startStep + 1);
+                            update(ev.id, { startStep, durationSteps: Math.min(ev.durationSteps, steps - startStep) });
+                          }}
+                          decLabel="Start a month earlier"
+                          incLabel="Start a month later"
+                        />
+                        <Stepper
+                          label="Lasts, in months"
+                          value={String(ev.durationSteps)}
+                          onDec={() => update(ev.id, { durationSteps: Math.max(1, ev.durationSteps - 1) })}
+                          onInc={() =>
+                            update(ev.id, { durationSteps: Math.min(steps - ev.startStep, ev.durationSteps + 1) })
+                          }
+                          decLabel="One month shorter"
+                          incLabel="One month longer"
+                        />
+                      </div>
+                      <button type="button" className="textButton" onClick={() => remove(ev.id)}>
+                        <Icon name="trash" size={14} />
+                        Remove this shock
+                      </button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+
+        <div className="menuAnchor" ref={menuRef}>
+          <button
+            type="button"
+            className="secondary addShock"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            <Icon name="plus" size={15} />
+            Add a shock
+          </button>
+          {menuOpen && (
+            <div className="menu" role="menu">
+              {EVENT_TYPES.map(({ type, blurb }) => (
+                <button key={type} type="button" role="menuitem" className="menuItem" onClick={() => add(type)}>
+                  <span className="menuItemTitle">{eventName(type)}</span>
+                  <span className="menuItemBlurb">{blurb}</span>
+                </button>
               ))}
             </div>
-            <ul className="eventList">
-              {events.map((ev) => {
-                const open = ev.id === openId;
-                const color = EVENT_COLORS[ev.type];
-                const left = Math.min(ev.startStep, steps) / steps;
-                const width = Math.max(0, Math.min(ev.durationSteps, steps - ev.startStep)) / steps;
-                const m = MAGNITUDE[ev.type];
-                return (
-                  <li key={ev.id} className={open ? "eventCard open" : "eventCard"}>
-                    <button
-                      type="button"
-                      className="eventHead"
-                      aria-expanded={open}
-                      aria-label={`${eventName(ev.type)}, ${describeWindow(ev)}`}
-                      onClick={() => setSelectedId(open ? null : ev.id)}
-                    >
-                      <span className="dot" style={{ background: color }} />
-                      <span className="eventName">{eventName(ev.type)}</span>
-                      <span className="eventMeta">
-                        {magnitudeText(ev)} · {windowText(ev)}
-                      </span>
-                    </button>
-                    <div className="eventTrack" aria-hidden="true">
-                      <span style={{ left: `${left * 100}%`, width: `${width * 100}%`, background: color }} />
-                    </div>
-                    {open && (
-                      <div className="eventEditor">
-                        <label className="field">
-                          <span className="fieldRow">
-                            <span className="fieldLabel">Magnitude</span>
-                            <span className="fieldValue">
-                              {ev.type === "unemployment" ? `+${ev.magnitude.toFixed(1)} pp` : ev.magnitude.toFixed(2)}{" "}
-                              <span className="muted">of {m.max}</span>
-                            </span>
-                          </span>
-                          <input
-                            type="range"
-                            aria-label={
-                              ev.type === "unemployment"
-                                ? `${eventName(ev.type)} magnitude, percentage points`
-                                : `${eventName(ev.type)} severity, 0 to 1`
-                            }
-                            aria-valuetext={
-                              ev.type === "unemployment"
-                                ? `${ev.magnitude.toFixed(1)} percentage points`
-                                : `severity ${ev.magnitude.toFixed(2)}`
-                            }
-                            min={0}
-                            max={m.max}
-                            step={m.step}
-                            value={ev.magnitude}
-                            style={{ accentColor: color }}
-                            onChange={(e) => update(ev.id, { magnitude: parseFloat(e.target.value) })}
-                          />
-                        </label>
-                        <div className="steppers">
-                          <Stepper
-                            label="Start"
-                            value={`m${ev.startStep}`}
-                            onDec={() => update(ev.id, { startStep: Math.max(0, ev.startStep - 1) })}
-                            onInc={() => {
-                              const startStep = Math.min(steps - 1, ev.startStep + 1);
-                              update(ev.id, { startStep, durationSteps: Math.min(ev.durationSteps, steps - startStep) });
-                            }}
-                            decLabel="Start a month earlier"
-                            incLabel="Start a month later"
-                          />
-                          <Stepper
-                            label="Duration"
-                            value={`${ev.durationSteps} mo`}
-                            onDec={() => update(ev.id, { durationSteps: Math.max(1, ev.durationSteps - 1) })}
-                            onInc={() =>
-                              update(ev.id, { durationSteps: Math.min(steps - ev.startStep, ev.durationSteps + 1) })
-                            }
-                            decLabel="One month shorter"
-                            incLabel="One month longer"
-                          />
-                        </div>
-                        <button type="button" className="textButton" onClick={() => remove(ev.id)}>
-                          <Icon name="trash" size={13} />
-                          Remove event
-                        </button>
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
-          </>
-        )}
+          )}
+        </div>
       </section>
 
-      <section className="railSection" aria-labelledby="assumptions-heading">
-        <h2 id="assumptions-heading" className="sectionTitle">
-          Assumptions
-        </h2>
+      <details className="assumptions">
+        <summary>Model assumptions</summary>
         <div className="control">
-          <span className="fieldLabel">Lags</span>
+          <span className="controlLabel">
+            Lags
+            <span className="controlHelp">How long stress takes to travel along each channel.</span>
+          </span>
           <Segmented<LagPreset>
             label="Lags"
             value={scenario.lagPreset}
@@ -247,7 +221,13 @@ export function ScenarioRail() {
           />
         </div>
         <div className="control">
-          <span className="fieldLabel">Buffers</span>
+          <span className="controlLabel">
+            Buffers
+            <span className="controlHelp">
+              How much stress each part absorbs a month: {bufferPct("low")}, {bufferPct("medium")} or{" "}
+              {bufferPct("high")}.
+            </span>
+          </span>
           <Segmented<BufferPreset>
             label="Buffers"
             value={scenario.bufferPreset}
@@ -260,23 +240,23 @@ export function ScenarioRail() {
           />
         </div>
         <div className="control">
-          <span className="fieldLabel">Horizon</span>
+          <span className="controlLabel">
+            Horizon
+            <span className="controlHelp">How many months to run.</span>
+          </span>
           <Segmented<number>
             label="Horizon"
             value={steps}
             onChange={setSteps}
-            options={HORIZONS.map((h) => ({ value: h, label: `${h} mo` }))}
+            options={HORIZONS.map((h) => ({ value: h, label: `${h} months` }))}
           />
         </div>
-      </section>
+      </details>
 
-      <section className="railNote" aria-label="How to read it">
-        <p className="eyebrow">How to read it</p>
-        <p>
-          Stress is a 0–1 pressure index. Each channel passes on a share of the new stress its source took on, after
-          its lag. Buffers absorb {bufferPct} of each node's stress a month.
-        </p>
-      </section>
+      <p className="railNote">
+        Stress runs from 0 (calm) to 1 (severe) for each part of the economy. Each channel passes on a share of the new
+        stress its source took on, after its lag.
+      </p>
     </div>
   );
 }
@@ -291,16 +271,16 @@ function Stepper(props: {
 }) {
   return (
     <div className="stepper">
-      <span className="fieldLabel">{props.label}</span>
+      <span className="stepperLabel">{props.label}</span>
       <div className="stepperBox">
         <button type="button" className="stepperButton" onClick={props.onDec} aria-label={props.decLabel}>
-          <Icon name="minus" size={14} />
+          <Icon name="minus" size={15} />
         </button>
         <output className="stepperValue" aria-live="polite">
           {props.value}
         </output>
         <button type="button" className="stepperButton" onClick={props.onInc} aria-label={props.incLabel}>
-          <Icon name="plus" size={14} />
+          <Icon name="plus" size={15} />
         </button>
       </div>
     </div>
