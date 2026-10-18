@@ -5,7 +5,7 @@ import { EDGES, NODES } from "../sim/graphSpec";
 import type { NodeId, SimulationResult } from "../sim/types";
 import { useAppStore } from "../state/store";
 import { CONTEXT, RELIEF, SIGNAL, stressColor, stressPosition } from "../ui/colors";
-import { LAYER_NAMES } from "../sim/narrative";
+import { LAYER_NAMES } from "../sim/layers";
 import { LAYER_BANDS, NODE_POSITIONS, NODE_RADIUS, VIEW, edgeGeometry, labelLines } from "../ui/networkLayout";
 
 /** A node's stress at a fractional month, interpolated so playback moves smoothly. */
@@ -59,7 +59,7 @@ export function NetworkView() {
         viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
         preserveAspectRatio="xMidYMid meet"
         role="group"
-        aria-label="Stress network: how stress moves from consumers to credit to markets"
+        aria-label="Map of the 14 parts of the economy and the channels between them"
       >
         {LAYER_BANDS.map((b, i) => {
           const ids = NODES.filter((n) => n.layer === b.layer).map((n) => n.id);

@@ -73,6 +73,7 @@ export function TopBar() {
   const applyPreset = useAppStore((s) => s.applyPreset);
   const mode = useAppStore((s) => s.mode);
   const setMode = useAppStore((s) => s.setMode);
+  const openAbout = useAppStore((s) => s.openAbout);
 
   return (
     <header className="topBar">
@@ -97,7 +98,7 @@ export function TopBar() {
         <label className="scenarioSelect">
           <span className="scenarioLabel">Scenario</span>
           <select value={presetId} onChange={(e) => applyPreset(e.target.value)}>
-            {presetId === "custom" && <option value="custom">Your own scenario</option>}
+            {presetId === "custom" && <option value="custom">Your scenario</option>}
             {PRESETS.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.label}
@@ -107,10 +108,10 @@ export function TopBar() {
           <Icon name="chevron-down" size={15} />
         </label>
         <CopyLinkButton />
-        <a className="topLink" href={`${REPO_URL}#propagation-model`} target="_blank" rel="noreferrer">
+        <button type="button" className="topLink" onClick={() => openAbout()}>
           <Icon name="book-open" size={15} />
           <span>About the model</span>
-        </a>
+        </button>
         <a className="iconButton" href={REPO_URL} target="_blank" rel="noreferrer" aria-label="Source code on GitHub">
           <Icon name="github" size={18} />
         </a>

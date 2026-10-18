@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NODES } from "../sim/graphSpec";
 import { fmtDelta } from "../sim/story";
 import type { LayerId, NodeId } from "../sim/types";
-import { LAYER_NAMES } from "../sim/narrative";
+import { LAYER_NAMES } from "../sim/layers";
 import { useAppStore } from "../state/store";
 import { stressColor } from "../ui/colors";
 

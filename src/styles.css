@@ -413,10 +413,11 @@
   line-height: 1.2;
 }
 
-.chapterText p:last-child {
+.chapterBody {
+  margin-top: 10px;
   font-size: 17px;
   line-height: 1.55;
-  color: var(--ink-2);
+  color: var(--ink);
 }
 
 .chapterControls {
@@ -437,6 +438,190 @@
 
 .exploreLink:hover {
   color: var(--signal);
+}
+
+/* A model result turned into people: tinted, and traced to a source under the chapter. */
+.translated {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--relief-tint);
+  color: var(--ink);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.translatedKey {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 7px;
+  border-radius: 2px;
+  background: var(--relief-tint);
+  box-shadow: inset 0 0 0 1px var(--relief);
+  vertical-align: -1px;
+}
+
+.sourceLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.research {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.researchLabel {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.research a {
+  color: var(--ink-2);
+  text-underline-offset: 2px;
+}
+
+.compareKey {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.compareSwatch {
+  width: 18px;
+  height: 2px;
+  background: var(--relief);
+}
+
+.settingsNote {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  max-width: 68ch;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.settingsNote p {
+  flex: 1 1 30ch;
+}
+
+.summaryPanel {
+  grid-template-areas: "text controls";
+}
+
+.summaryPanel .chapterBody:first-child {
+  margin-top: 0;
+}
+
+/* ---------- About ---------- */
+
+.about {
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(86vh, 900px);
+  padding: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 6px;
+  background: var(--page);
+  color: var(--ink);
+}
+
+.about::backdrop {
+  background: rgba(22, 22, 22, 0.35);
+}
+
+.aboutHead {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--rule);
+  background: var(--page);
+}
+
+.aboutHead h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.aboutBody {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 22px 24px 28px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+
+.aboutBody section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scroll-margin-top: 72px;
+}
+
+.aboutBody h3 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.aboutBody h4 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.aboutBody ul {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 1.2em;
+}
+
+.aboutSource {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+}
+
+.aboutLinks {
+  font-size: 14px;
+}
+
+.aboutBody a {
+  color: var(--ink);
+  text-underline-offset: 2px;
+}
+
+.aboutFoot {
+  font-size: 14px;
 }
 
 /* ---------- Layer bands ---------- */
@@ -460,6 +645,18 @@
 
 .chapterSpan {
   fill: var(--signal-soft);
+}
+
+.chartNote {
+  margin-top: -14px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+
+.nodeTrace {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.75;
 }
 
 .laneBar {
@@ -1522,20 +1719,7 @@ input[type="range"] {
     font-size: 26px;
   }
 
-  .storyStart {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 18px;
-  margin-top: 6px;
-}
-
-.storyLength {
-  font-size: 14px;
-  color: var(--ink-3);
-}
-
-.chapterPanel {
+  .chapterPanel {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "steps"
@@ -1546,6 +1730,12 @@ input[type="range"] {
   .chapterControls {
     justify-content: flex-start;
     max-width: none;
+  }
+
+  .summaryPanel {
+    grid-template-areas:
+      "text"
+      "controls";
   }
 
   .stepTitle {
@@ -1592,7 +1782,7 @@ input[type="range"] {
     font-size: 20px;
   }
 
-  .chapterText p:last-child {
+  .chapterBody {
     font-size: 16px;
   }
 

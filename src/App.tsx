@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { AboutPanel } from "./components/AboutPanel";
 import { ExploreMode } from "./components/ExploreMode";
 import { StoryMode } from "./components/StoryMode";
 import { TopBar } from "./components/TopBar";
@@ -46,6 +47,7 @@ export function App() {
       <TopBar />
       {/* A new preset is a new story, so it starts from its first chapter. */}
       {mode === "story" ? <StoryMode key={presetId} /> : <ExploreMode />}
+      <AboutPanel />
     </div>
   );
 }

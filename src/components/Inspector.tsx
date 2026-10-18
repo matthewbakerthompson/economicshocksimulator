@@ -1,6 +1,6 @@
 import { presetLag } from "../sim/engine";
 import { EDGES, NODES } from "../sim/graphSpec";
-import { LAYER_NAMES } from "../sim/narrative";
+import { LAYER_NAMES } from "../sim/layers";
 import { fmtDelta, nodeLabel } from "../sim/story";
 import { useAppStore } from "../state/store";
 import { RELIEF, SIGNAL, stressColor } from "../ui/colors";
@@ -66,7 +66,7 @@ export function Inspector() {
       <section className="why" aria-labelledby="why-heading">
         <h3 id="why-heading">{t === 0 ? "Why it moved" : `Why it moved from month ${t - 1} to ${t}`}</h3>
         {t === 0 ? (
-          <p className="empty">Month 0 is the baseline: everything starts calm.</p>
+          <p className="empty">Month 0 is the starting point. Nothing has moved yet.</p>
         ) : rows.length === 0 ? (
           <p className="empty">Nothing moved this month.</p>
         ) : (

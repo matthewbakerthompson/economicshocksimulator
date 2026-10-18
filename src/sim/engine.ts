@@ -48,8 +48,14 @@ export function dampeningStrength(preset: Scenario["bufferPreset"]): number {
  * the weight is the edge's pass-through. Every loop in the graph has a gain below 1, so intake
  * dies out after the events end and buffers bring every node back toward zero.
  */
-export function simulateScenario(scenario: Scenario, steps: number): SimulationResult {
+export function simulateScenario(
+  scenario: Scenario,
+  steps: number,
+  options: { omitEdges?: readonly string[] } = {}
+): SimulationResult {
   const nodeIds = NODES.map((n) => n.id);
+  // Leaving edges out answers "what if this channel didn't exist?" (the stories use it to measure feedback).
+  const edges = options.omitEdges ? EDGES.filter((e) => !options.omitEdges!.includes(e.id)) : EDGES;
 
   // State history: S[id][t] is a node's stress at the start of month t.
   const S = {} as Record<NodeId, number[]>;
@@ -95,7 +101,7 @@ export function simulateScenario(scenario: Scenario, steps: number): SimulationR
 
     // Transmission along edges: a share of the source's lagged intake (relief passes on too).
     const edgeWeightMult = stepEvents.modifiers.edgeWeightMult;
-    for (const e of EDGES) {
+    for (const e of edges) {
       const lag = presetLag(e.typicalLag, scenario.lagPreset);
       const srcT = t - lag - 1;
       if (srcT < 0) continue;

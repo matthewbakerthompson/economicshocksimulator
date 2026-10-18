@@ -58,12 +58,14 @@ export function joinList(items: string[]): string {
 
 function eventPhrase(ev: CausalEvent): string {
   switch (ev.type) {
-    case "unemployment":
-      return `unemployment +${ev.magnitude.toFixed(1)}pp`;
+    case "unemployment": {
+      const size = Math.round(ev.magnitude * 10) / 10;
+      return `unemployment up ${size} ${size === 1 ? "point" : "points"}`;
+    }
     case "stagflation":
-      return `stagflation (severity ${ev.magnitude.toFixed(2)})`;
+      return `stagflation at severity ${ev.magnitude.toFixed(2)}`;
     case "oil_glut":
-      return `an oil glut (severity ${ev.magnitude.toFixed(2)})`;
+      return `an oil glut at severity ${ev.magnitude.toFixed(2)}`;
   }
 }
 
@@ -90,37 +92,37 @@ export function describeMonth(result: SimulationResult, scenario: Scenario, t: n
   }
 
   let headline: string;
-  if (t === 0) headline = "The system starts at rest";
-  else if (!topMover) headline = "Little moves this month";
+  if (t === 0) headline = "Nothing has moved yet";
+  else if (!topMover) headline = "No part moves by 0.001 or more";
   else {
     const name = sentenceCase(nodeLabel(topMover.nodeId));
     const plural = PLURAL.has(topMover.nodeId);
     headline =
       topMover.delta > 0
-        ? `${name} ${plural ? "rise" : "rises"} fastest, ${fmtDelta(topMover.delta)}`
-        : `${name} ${plural ? "ease" : "eases"} most, ${fmtDelta(topMover.delta)}`;
+        ? `${name} ${plural ? "rise" : "rises"} most, ${fmtDelta(topMover.delta)}`
+        : `${name} ${plural ? "fall" : "falls"} most, ${fmtDelta(topMover.delta)}`;
   }
 
   let detail: string;
   if (events.length === 0) {
-    detail = "No events in this scenario. Add one to see how a shock spreads.";
+    detail = "This scenario has no shocks.";
   } else if (activeEvents.length > 0) {
     detail = `Active: ${joinList(activeEvents.map(eventPhrase))}.`;
     const types = new Set(activeEvents.map((e) => e.type));
-    if (types.has("stagflation") && types.has("oil_glut")) detail += " Stagflation mutes the oil glut's relief.";
+    if (types.has("stagflation") && types.has("oil_glut")) detail += " During stagflation the oil glut's relief is 55% of its usual size.";
   } else {
     const ended = events.filter((e) => lastMonth(e) < t).sort((a, b) => lastMonth(a) - lastMonth(b));
     const upcoming = events.filter((e) => e.startStep > t).sort((a, b) => a.startStep - b.startStep);
     if (ended.length === 0) {
-      detail = `Nothing has happened yet. ${capitalize(eventPhrase(upcoming[0]))} starts in month ${upcoming[0].startStep}.`;
+      detail = `No shock has started yet. ${capitalize(eventPhrase(upcoming[0]))} starts in month ${upcoming[0].startStep}.`;
     } else {
       detail = `${capitalize(joinList(ended.map(eventShortName)))} ended by month ${lastMonth(ended[ended.length - 1])}.`;
       if (upcoming.length > 0) {
         detail += ` ${capitalize(eventPhrase(upcoming[0]))} starts in month ${upcoming[0].startStep}.`;
       } else {
         detail += topMover
-          ? " Stress is still moving on its own, through the lags."
-          : " The system is settling back toward zero.";
+          ? " Stress is still passing from part to part."
+          : " Stress is falling back toward zero.";
       }
     }
   }

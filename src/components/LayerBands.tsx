@@ -1,10 +1,10 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent, PointerEvent } from "react";
 import { NODES } from "../sim/graphSpec";
-import { type LayerSummary, summarizeLayers } from "../sim/narrative";
-import type { CausalEvent, LayerId, NodeId } from "../sim/types";
+import { type LayerSummary, summarizeLayers } from "../sim/layers";
+import type { CausalEvent, LayerId, NodeId, SimulationResult } from "../sim/types";
 import { useAppStore } from "../state/store";
-import { CONTEXT, SIGNAL } from "../ui/colors";
+import { CONTEXT, RELIEF, SIGNAL } from "../ui/colors";
 import { Icon } from "./Icon";
 
 type Props = {
@@ -13,8 +13,14 @@ type Props = {
   focus?: LayerId | null;
   /** Story: the chapter's months. */
   range?: [number, number] | null;
-  /** Story: the layer whose peak the focus layer's peak follows, for the lag arrow. */
-  lagFrom?: LayerId | null;
+  /** Story: the part of the economy the chapter is about, drawn as a line in its layer with its peak marked. */
+  node?: NodeId | null;
+  /** Story: draw the chart up to here even when the playhead is earlier, so going back hides nothing. */
+  revealTo?: number;
+  /** Story: a second run drawn over the first, for comparison. */
+  compare?: SimulationResult | null;
+  /** Story: the stress at the top of each band. Stories scale to their own run; Explore uses the full 0–1 scale. */
+  scaleMax?: number;
   /** Explore: the layer opened up into its nodes. */
   expanded?: LayerId | null;
   onToggleLayer?: (layer: LayerId) => void;
@@ -30,13 +36,16 @@ const AXIS_H = 26;
 function eventLabel(e: CausalEvent): string {
   switch (e.type) {
     case "unemployment":
-      return `Unemployment +${Number.isInteger(e.magnitude) ? e.magnitude : e.magnitude.toFixed(1)} pts`;
+      return `Unemployment, ${Math.round(e.magnitude * 10) / 10} ${e.magnitude === 1 ? "point" : "points"}`;
     case "stagflation":
       return "Stagflation";
     case "oil_glut":
-      return "Oil glut (relief)";
+      return "Oil glut";
   }
 }
+
+// Node labels that read as plural ("Missed payments peak", not "peaks").
+const PLURAL = new Set<NodeId>(["consumers_delinquency", "credit_bank_losses", "credit_borrow_cost"]);
 
 function useWidth(ref: React.RefObject<HTMLDivElement | null>): number {
   const [width, setWidth] = useState(0);
@@ -53,7 +62,17 @@ function useWidth(ref: React.RefObject<HTMLDivElement | null>): number {
 }
 
 /** Stress over time for households, banks and markets, as three aligned bands. */
-export function LayerBands({ mode, focus = null, range = null, lagFrom = null, expanded = null, onToggleLayer }: Props) {
+export function LayerBands({
+  mode,
+  focus = null,
+  range = null,
+  node = null,
+  revealTo = 0,
+  compare = null,
+  scaleMax = 1,
+  expanded = null,
+  onToggleLayer,
+}: Props) {
   const ref = useRef<HTMLDivElement | null>(null);
   const width = useWidth(ref);
   const result = useAppStore((s) => s.result);
@@ -66,6 +85,7 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
   const dragging = useRef(false);
 
   const layers = useMemo(() => (result ? summarizeLayers(result) : []), [result]);
+  const compareLayers = useMemo(() => (compare ? summarizeLayers(compare) : null), [compare]);
   const months = result?.steps ?? 0;
   const last = Math.max(1, months - 1);
   const narrow = width < 520;
@@ -99,11 +119,11 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
     return series[i] + (series[j] - series[i]) * (at - i);
   };
   const area = (series: number[], top: number, h: number) => {
-    const pts = series.map((v, m) => `${x(m).toFixed(1)},${(top + h - v * (h - 6)).toFixed(1)}`);
+    const pts = series.map((v, m) => `${x(m).toFixed(1)},${(top + h - (v / scaleMax) * (h - 6)).toFixed(1)}`);
     return { line: `M${pts.join("L")}`, fill: `M${x(0)},${top + h}L${pts.join("L")}L${x(last)},${top + h}Z` };
   };
 
-  const reveal = mode === "story" ? x(tFloat) : x1;
+  const reveal = mode === "story" ? x(Math.max(tFloat, revealTo)) : x1;
   const monthFromX = (clientX: number) => {
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return t;
@@ -125,13 +145,11 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
     }
   };
 
-  const byLayer = Object.fromEntries(layers.map((l) => [l.layer, l])) as Record<LayerId, LayerSummary>;
   const layerRow = (layer: LayerId) => rows.find((r) => r.kind === "layer" && r.layer === layer)!;
-  const peakPoint = (layer: LayerId) => {
-    const r = layerRow(layer);
-    const s = byLayer[layer];
-    return { x: x(s.peakAt), y: r.y + r.h - s.peak * (r.h - 6), s };
-  };
+  const nodeSpec = node ? NODES.find((n) => n.id === node)! : null;
+  const nodeSeries = node && result ? result.seriesByNode[node] : null;
+  const nodePeak = nodeSeries ? Math.max(...nodeSeries) : 0;
+  const nodePeakAt = nodeSeries ? nodeSeries.indexOf(nodePeak) : 0;
   const ticks = Array.from({ length: months }, (_, m) => m).filter((m) => m % (months > 12 ? 3 : 2) === 0 || m === last);
 
   return (
@@ -181,7 +199,8 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
 
             {rows.map((r) => {
               if (r.kind === "layer") {
-                const isFocus = mode === "explore" || focus === null || focus === r.layer;
+                // When a comparison is drawn, the run itself becomes the grey backdrop for the two lines.
+                const isFocus = !compareLayers && (mode === "explore" || focus === null || focus === r.layer);
                 const { line, fill } = area(r.summary.series, r.y, r.h);
                 return (
                   <g key={r.layer}>
@@ -189,8 +208,24 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
                     <path d={line} className="ghost" />
                     <g clipPath={`url(#reveal-${mode})`}>
                       <path d={fill} fill={isFocus ? SIGNAL : CONTEXT} fillOpacity={isFocus ? 0.85 : 0.55} />
-                      <path d={line} fill="none" stroke={isFocus ? SIGNAL : "#8f8f8a"} strokeWidth={1.5} />
+                      <path
+                        d={line}
+                        fill="none"
+                        stroke={isFocus || compareLayers ? SIGNAL : "#8f8f8a"}
+                        strokeWidth={compareLayers ? 2 : 1.5}
+                      />
+                      {nodeSpec && nodeSeries && nodeSpec.layer === r.layer && (
+                        <path d={area(nodeSeries, r.y, r.h).line} className="nodeTrace" />
+                      )}
                     </g>
+                    {compareLayers && (
+                      <path
+                        d={area(compareLayers.find((c) => c.layer === r.layer)!.series, r.y, r.h).line}
+                        fill="none"
+                        stroke={RELIEF}
+                        strokeWidth={2}
+                      />
+                    )}
                   </g>
                 );
               }
@@ -204,47 +239,19 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
               );
             })}
 
-            {mode === "story" && focus && byLayer[focus]?.material && tFloat >= byLayer[focus].peakAt && (
+            {mode === "story" && nodeSpec && nodeSeries && nodePeak > 0.005 && Math.max(tFloat, revealTo) >= nodePeakAt && (
               <g className="annotation">
                 {(() => {
-                  const p = peakPoint(focus);
-                  const anchorEnd = p.x > x1 - 150;
+                  const r = layerRow(nodeSpec.layer);
+                  const px = x(nodePeakAt);
+                  const py = r.y + r.h - (nodePeak / scaleMax) * (r.h - 6);
+                  const anchorEnd = px > x1 - 220;
                   return (
                     <>
-                      <circle cx={p.x} cy={p.y} r={4.5} className="peakDot" />
-                      <text x={p.x + (anchorEnd ? -10 : 10)} y={p.y - 8} textAnchor={anchorEnd ? "end" : "start"}>
-                        Peak {p.s.peak.toFixed(2)} in month {p.s.peakAt}
+                      <circle cx={px} cy={py} r={4.5} className="peakDot" />
+                      <text x={px + (anchorEnd ? -10 : 10)} y={py - 8} textAnchor={anchorEnd ? "end" : "start"}>
+                        {nodeSpec.label} {PLURAL.has(nodeSpec.id) ? "peak" : "peaks"} in month {nodePeakAt}
                       </text>
-                    </>
-                  );
-                })()}
-              </g>
-            )}
-
-            {mode === "story" && focus && lagFrom && byLayer[lagFrom]?.material && tFloat >= byLayer[focus].peakAt && (
-              <g className="lagArrow">
-                {(() => {
-                  const a = peakPoint(lagFrom);
-                  const b = peakPoint(focus);
-                  const gap = b.s.peakAt - a.s.peakAt;
-                  const midY = (a.y + b.y) / 2;
-                  // Leave the earlier peak and arrive at the later one from the side they face.
-                  const down = b.y >= a.y;
-                  const y0 = down ? a.y + 6 : a.y - 6;
-                  const y1 = down ? b.y - 8 : b.y + 8;
-                  const path = `M${a.x},${y0} C${a.x},${midY} ${b.x},${midY} ${b.x},${y1}`;
-                  const tip = down ? b.y - 7 : b.y + 7;
-                  const back = down ? tip - 7 : tip + 7;
-                  return (
-                    <>
-                      <circle cx={a.x} cy={a.y} r={3.5} className="peakDot context" />
-                      <path d={path} />
-                      <path d={`M${b.x - 4},${back} L${b.x},${tip} L${b.x + 4},${back}`} className="head" />
-                      {gap !== 0 && (
-                        <text x={Math.max(a.x, b.x) + 8} y={midY + 4}>
-                          {gap > 0 ? `${gap} month${gap === 1 ? "" : "s"} later` : `${-gap} month${gap === -1 ? "" : "s"} earlier`}
-                        </text>
-                      )}
                     </>
                   );
                 })()}
@@ -295,7 +302,7 @@ export function LayerBands({ mode, focus = null, range = null, lagFrom = null, e
                 ) : (
                   <span className="rowName">{r.summary.name}</span>
                 )}
-                <span className="rowValue">{valueAt(r.summary.series, tFloat).toFixed(2)}</span>
+                {mode === "explore" && <span className="rowValue">{valueAt(r.summary.series, tFloat).toFixed(2)}</span>}
               </div>
             ) : (
               <button

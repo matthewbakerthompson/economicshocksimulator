@@ -7,9 +7,9 @@ import { Icon } from "./Icon";
 import { Segmented } from "./Segmented";
 
 const EVENT_TYPES: Array<{ type: EventType; blurb: string }> = [
-  { type: "unemployment", blurb: "Unemployment rises by a number of percentage points." },
-  { type: "stagflation", blurb: "Prices rise while growth stalls. Stress spreads harder and lingers." },
-  { type: "oil_glut", blurb: "Cheap oil eases borrowing costs, volatility and funding strain." },
+  { type: "unemployment", blurb: "Unemployment rises by the size you set, spread over the months it lasts." },
+  { type: "stagflation", blurb: "Prices rise while growth stalls. Cuts confidence and spending, and raises borrowing costs and risk aversion." },
+  { type: "oil_glut", blurb: "Cheap oil lowers borrowing costs and eases volatility and funding strain." },
 ];
 
 const MAGNITUDE: Record<EventType, { max: number; step: number; initial: number }> = {
@@ -88,10 +88,10 @@ export function ScenarioRail() {
     <div className="railInner">
       <section className="railSection" aria-labelledby="scenario-heading">
         <h2 id="scenario-heading">Your scenario</h2>
-        <p className="railIntro">Stack shocks on the timeline. Every change re-runs the model.</p>
+        <p className="railIntro">Add shocks and set when they start and how long they last. The model reruns after every change.</p>
 
         {events.length === 0 ? (
-          <p className="empty">No shocks yet, so the economy stays calm. Add one below.</p>
+          <p className="empty">No shocks yet. Add one below.</p>
         ) : (
           <ul className="eventList">
             {events.map((ev, i) => {
@@ -125,7 +125,7 @@ export function ScenarioRail() {
                     <div className="eventEditor">
                       <label className="field">
                         <span className="fieldRow">
-                          <span>{ev.type === "unemployment" ? "Size, in percentage points" : "Severity, 0 to 1"}</span>
+                          <span>{ev.type === "unemployment" ? "Total rise, in percentage points" : "Severity, 0 to 1"}</span>
                           <span className="fieldValue">
                             {ev.type === "unemployment" ? ev.magnitude.toFixed(1) : ev.magnitude.toFixed(2)}
                           </span>
@@ -133,7 +133,7 @@ export function ScenarioRail() {
                         <input
                           type="range"
                           aria-label={
-                            ev.type === "unemployment" ? `${name} size, percentage points` : `${name} severity, 0 to 1`
+                            ev.type === "unemployment" ? `${name} total rise, percentage points` : `${name} severity, 0 to 1`
                           }
                           aria-valuetext={size(ev)}
                           min={0}
@@ -254,8 +254,8 @@ export function ScenarioRail() {
       </details>
 
       <p className="railNote">
-        Stress runs from 0 (calm) to 1 (severe) for each part of the economy. Each channel passes on a share of the new
-        stress its source took on, after its lag.
+        Stress on each part of the economy runs from 0 (none) to 1 (the most the model allows). Each channel passes on a
+        share of the new stress its source took on, after its lag.
       </p>
     </div>
   );

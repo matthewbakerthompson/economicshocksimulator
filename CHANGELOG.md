@@ -2,51 +2,59 @@
 
 ## Unreleased
 
-**The simulator now tells a story.** It opens on the run's finding as a headline,
-for example "Three overlapping shocks reach the banks within 5 months, and 14
-months after they end, bank stress is still 86% of its peak", and walks through
-the run in chapters written from the data: the shocks land, each layer peaks in
-the order it happens, then the aftermath. The full model is one click away in
-Explore.
+### Fixed
+- An unemployment shock now raises unemployment by its size. Before, the full size
+  was added in every month the shock lasted: a 1-point rise over four months raised
+  unemployment by about 3.7 points, and the 1.5-point rise in "Stagflation meets an
+  oil glut" hit the 6-point top of the scale. The size is now spread over the
+  months the shock lasts.
 
-### Story and explore
-- A guided story with Play, Back, Next, Replay and Restart. Each chapter plays its
-  months and stops; nothing plays until you ask. The story ends on "That's the
-  story" and hands over to Explore.
-- The chart is three stress bands (households, banks and credit, markets) over the
-  months, with each event's window, the chapter's months shaded, the peaks marked
-  and an arrow for the lag between peaks. In Explore each band opens into its parts.
-- Explore keeps the scenario editor, a map of the network, a table, and the
-  receipts, now written as sentences. Restart and step controls sit with Play.
-- Links carry the view and month; a story link with a month opens on its chapter.
+### Stories
+- "Stagflation meets an oil glut" and "Unemployment shock" have written stories,
+  in eight and five chapters. Each chapter covers one part of what happens, such as
+  layoffs, missed payments, banks or feedback, and the last compares the run with a
+  rerun using high buffers. The text is fixed, every number in it is computed from
+  the run, and tests check the numbers against the model.
+- Other scenarios, and the two presets with changed settings, get a short factual
+  summary.
+- Some results are given in people: people out of work (BLS labor force), people
+  with a new foreclosure (New York Fed data, scaled to 2008–10) and banks
+  tightening small-business lending (Federal Reserve loan officer survey, scaled to
+  2008). They are tinted, name their source, and are given as ranges where the
+  scale is a convention.
+- Health after job loss is quoted from published research next to the layoffs. The
+  model computes none of it.
+- Stress values from 0 to 1 no longer appear in the story. Explore still shows them.
+- The chart draws the part each chapter is about and marks its peak, keeps
+  showing months already covered when a chapter goes back in time, and draws the
+  high-buffer rerun as a blue line. Story charts are scaled to the run's highest
+  point.
+- About the model opens a panel with how the model works, every source and
+  caveat, and the model's limits.
+- Feedback is measured by rerunning without the two channels that close every loop.
 
-### Clarity
-- Parts of the economy are named for the pressure they measure (Confidence loss,
-  Savings drawdown, Capital strain, Credit squeeze, Liquidity strain…), so a higher
-  number always reads as worse. Channels are described as mechanisms ("Missed
-  payments become loan losses").
-- Plain words replace abbreviations, values show two decimals outside the
-  receipts, and stress is defined where you read it.
-- "Oil glut on its own" is replaced by "Stagflation alone": relief on a calm
-  economy changes nothing, and the story now says so when you build that case.
-
-### Design
-- A light chart-desk look: a white page, grey structure, one vermilion ink for
-  stress on a square-root scale, and one typeface (Libre Franklin) with tabular
-  figures. No mono labels, uppercase eyebrows, pills or gradients.
-- Accessible: text contrast of at least 5:1, touch targets of at least 24px,
-  announcements only when a chapter changes, motion only while playing, and full
-  keyboard control of the chart.
-- New events start at the month you're looking at; a failed run says so.
+### Interface (#9, #10)
+- The app opens on the story. Explore has the scenario editor, a chart of the
+  three groups that opens into their parts, a map, a table and the receipts for
+  each change.
+- Parts are named for the pressure they measure (Confidence loss, Capital strain,
+  Credit squeeze), so a higher number is always worse. Channel names say what
+  happens ("Missed payments become loan losses").
+- Links hold the view, scenario, month and selected part.
+- "Oil glut on its own" is replaced by "Stagflation alone".
+- A white page, one red for stress on a square-root scale, and one typeface,
+  Libre Franklin. Text contrast is at least 5:1, touch targets are at least 24px,
+  and the chart works from the keyboard.
+- Text throughout the app and this repository is rewritten in plain language.
 
 ## 0.2.0 (2026-10-17)
 
-**Shocks no longer saturate the graph.** Before, any shock, even half a point of
+Shocks no longer saturate the graph. Before, any shock, even half a point of
 unemployment for one month, drove every node to its ceiling and held it there for
 the rest of the run. Edges now pass on the new stress their source took on rather
 than its whole level, so an edge's weight is its pass-through and the system is
 stable by construction. In the default scenario (unemployment +1 pp for four
-months), households peak around 0.6, the banks take a nick, markets barely move,
+months), households peak around 0.6, the banks move a little, markets barely move,
 and every layer is fading by month 24. (#4)
 
 ### Model
