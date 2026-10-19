@@ -28,14 +28,14 @@ describe("receiptRows", () => {
   it("names the channels and puts buffers after the drivers", () => {
     const rows = receiptRows(r, "consumers_delinquency", 12);
     expect(rows.map((row) => row.title)).toEqual([
-      "Income squeeze",
       "Borrowing costs",
+      "Income squeeze",
       "Credit squeeze",
       "Buffers",
     ]);
-    expect(rows[0]).toMatchObject({
+    expect(rows[1]).toMatchObject({
       from: "consumers_income",
-      detail: "Squeezed incomes mean missed payments. 2-month lag, weight 0.52.",
+      detail: "Lower incomes cause missed payments. 2-month lag, weight 0.52.",
     });
     expect(rows[3].detail).toBe("Absorb 5% of the stress carried into the month.");
   });

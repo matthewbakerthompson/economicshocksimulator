@@ -10,6 +10,7 @@ export { TopBar } from "../../components/TopBar";
 export * as Sim from "../../sim/engine";
 export * as SimTypes from "../../sim/types";
 export * as SimStory from "../../sim/story";
-export * as SimNarrative from "../../sim/narrative";
+export * as SimLayers from "../../sim/layers";
+export * as Story from "../../story";
 export * as SimEvents from "../../sim/events";
 export * as SimPresets from "../../sim/presets";

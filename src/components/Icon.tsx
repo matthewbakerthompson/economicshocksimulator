@@ -17,6 +17,12 @@ const PATHS = {
     </>
   ),
   minus: <path d="M5 12h14" />,
+  x: (
+    <>
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </>
+  ),
   trash: (
     <>
       <path d="M3 6h18" />

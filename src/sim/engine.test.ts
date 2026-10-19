@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { simulateScenario } from "./engine";
 import { buildStepEventEffects } from "./events";
-import { EDGES, NODES } from "./graphSpec";
+import { EDGES, FEEDBACK_EDGES, NODES } from "./graphSpec";
 import { defaultScenario } from "./types";
 import type { CausalEvent, NodeId, Scenario, SimulationResult } from "./types";
 
@@ -203,4 +203,33 @@ describe("simulateScenario", () => {
     // The extreme scenario hits the bounds, so the clamp receipts are exercised.
     expect(clamps).toBeGreaterThan(0);
   });
+
+  it("has no loops once the feedback channels are left out", () => {
+    const edges = EDGES.filter((e) => !FEEDBACK_EDGES.includes(e.id));
+    expect(edges).toHaveLength(EDGES.length - FEEDBACK_EDGES.length);
+    // Peel off nodes with no incoming edges; a cycle would leave some behind.
+    let left = new Set(NODES.map((n) => n.id));
+    for (;;) {
+      const roots = [...left].filter((id) => !edges.some((e) => e.to === id && left.has(e.from)));
+      if (roots.length === 0) break;
+      left = new Set([...left].filter((id) => !roots.includes(id)));
+    }
+    expect([...left]).toEqual([]);
+  });
+
+  it("leaves out the edges it is told to", () => {
+    const s = scenario([unemployment(1, 1, 4)]);
+    const cut = simulateScenario(s, 24, { omitEdges: ["u_to_income"] });
+    expect(cut.seriesByNode.consumers_income.every((v) => v === 0)).toBe(true);
+    expect(simulateScenario(s, 24).seriesByNode.consumers_income.some((v) => v > 0)).toBe(true);
+  });
+
+  it("raises unemployment by about the size of an unemployment shock", () => {
+    const r = simulateScenario(scenario([unemployment(1, 1, 4)]), 24);
+    const peakPoints = Math.max(...r.seriesByNode.consumers_unemployment) * 6;
+    // A little under 1 point: buffers absorb some of the rise while it builds.
+    expect(peakPoints).toBeGreaterThan(0.9);
+    expect(peakPoints).toBeLessThan(1);
+  });
 });
+

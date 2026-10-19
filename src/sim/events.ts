@@ -44,13 +44,15 @@ function baseEventInjections(ev: CausalEvent, t: number, interaction: Set<EventT
   // Convert user magnitudes into [−1..+1]ish stress adjustments.
   // Positive amount => more stress; negative amount => relief.
   if (ev.type === "unemployment") {
-    const amt = clamp01(ev.magnitude / 6); // 0..6pp → 0..1
+    // The size is the whole rise, in points, spread evenly over the months the event lasts.
+    // 6 points is the top of the scale.
+    const amt = clamp01(ev.magnitude / 6) / Math.max(1, ev.durationSteps);
     return [
       {
         nodeId: "consumers_unemployment",
         item: {
           kind: "shock",
-          label: `Event: unemployment (up ${ev.magnitude.toFixed(1)} points)`,
+          label: `Event: unemployment (up ${ev.magnitude.toFixed(1)} points over ${ev.durationSteps === 1 ? "1 month" : `${ev.durationSteps} months`})`,
           amount: amt,
           meta: { t, eventId: ev.id, start: ev.startStep, duration: ev.durationSteps },
         },

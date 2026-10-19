@@ -50,6 +50,13 @@ describe("buildStepEventEffects", () => {
     expect(at(9)).toBeCloseTo(1);
   });
 
+  it("spreads an unemployment rise over the months it lasts, so the total is the size", () => {
+    const ev: CausalEvent = { id: "u", type: "unemployment", magnitude: 2, startStep: 1, durationSteps: 4 };
+    const monthly = [1, 2, 3, 4].map((t) => amountOn([ev], t, "consumers_unemployment"));
+    for (const m of monthly) expect(m).toBeCloseTo(2 / 6 / 4);
+    expect(monthly.reduce((a, b) => a + b, 0)).toBeCloseTo(2 / 6);
+  });
+
   it("makes stress persist and transmit harder during stagflation", () => {
     const fx = effectsAt([stagflation], 2);
     expect(fx.modifiers.edgeWeightMult).toBeCloseTo(1.08);

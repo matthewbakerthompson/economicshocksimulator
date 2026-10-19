@@ -13,6 +13,9 @@ export const SPEEDS = [
 
 export type ExploreView = "layers" | "map" | "table";
 
+/** Sections of the About panel that other parts of the app link to. */
+export type AboutSection = "top" | "sources";
+
 type AppState = {
   mode: Mode;
   scenario: Scenario;
@@ -30,6 +33,8 @@ type AppState = {
   selectedNodeId: NodeId;
   hoverNodeId: NodeId | null;
   exploreView: ExploreView;
+  /** The About panel's open section, or null when it's closed. */
+  about: AboutSection | null;
 
   setMode: (mode: Mode) => void;
   setScenario: (patch: Partial<Scenario>) => void;
@@ -45,6 +50,8 @@ type AppState = {
   setSelectedNodeId: (id: NodeId) => void;
   setHoverNodeId: (id: NodeId | null) => void;
   setExploreView: (view: ExploreView) => void;
+  openAbout: (section?: AboutSection) => void;
+  closeAbout: () => void;
   applyLink: (link: DecodedLink) => void;
   runSimulation: () => Promise<void>;
 };
@@ -100,6 +107,7 @@ export const useAppStore = create<AppState>((set, get) => {
     selectedNodeId: start.selectedNodeId,
     hoverNodeId: null,
     exploreView: "layers",
+    about: null,
 
     setMode: (mode) => set({ mode, isPlaying: false, playUntil: null }),
     setScenario: (patch) => {
@@ -140,6 +148,8 @@ export const useAppStore = create<AppState>((set, get) => {
     setSelectedNodeId: (id) => set({ selectedNodeId: id }),
     setHoverNodeId: (id) => set({ hoverNodeId: id }),
     setExploreView: (view) => set({ exploreView: view }),
+    openAbout: (section = "top") => set({ about: section }),
+    closeAbout: () => set({ about: null }),
     applyLink: (link) => {
       set({
         mode: link.mode,

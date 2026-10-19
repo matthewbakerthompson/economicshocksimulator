@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { KeyboardEvent } from "react";
-import { buildNarrative } from "../sim/narrative";
+import { presetById } from "../sim/presets";
 import { describeMonth } from "../sim/story";
 import type { LayerId } from "../sim/types";
 import { type ExploreView, SPEEDS, useAppStore } from "../state/store";
@@ -82,7 +82,8 @@ export function ExploreMode() {
   const setView = useAppStore((s) => s.setExploreView);
   const [expanded, setExpanded] = useState<LayerId | null>("Consumers");
 
-  const narrative = useMemo(() => (result ? buildNarrative(result, scenario) : null), [result, scenario]);
+  const presetId = useAppStore((s) => s.presetId);
+  const title = presetById(presetId)?.label ?? "Your scenario";
   const month = result ? describeMonth(result, scenario, t) : null;
 
   const onTabKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -103,7 +104,7 @@ export function ExploreMode() {
 
       <main className="exploreMain">
         <header className="exploreHeader">
-          <h1>{narrative?.title ?? "Running the model…"}</h1>
+          <h1>{title}</h1>
           {error ? (
             <p className="notice" role="alert">
               The model didn't run: {error}.
@@ -155,8 +156,8 @@ export function ExploreMode() {
           )}
           {view === "layers" && (
             <p className="hint">
-              Open a layer to see its parts; select one to see why it moved. Drag across the chart, or use the arrow
-              keys, to move through the months.
+              Open a layer to see its parts, and select a part to see why it moved. Drag across the chart or use the
+              arrow keys to change the month.
             </p>
           )}
         </div>
